@@ -1,0 +1,146 @@
+using MaltaDiveWeather.Application.Abstractions;
+using MaltaDiveWeather.Infrastructure.Background;
+using MaltaDiveWeather.Infrastructure.Configuration;
+using MaltaDiveWeather.Infrastructure.Providers;
+using MaltaDiveWeather.Infrastructure.Storage;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+
+namespace MaltaDiveWeather.Infrastructure.DependencyInjection;
+
+/// <summary>
+/// Registers infrastructure services.
+/// </summary>
+public static class InfrastructureServiceCollectionExtensions
+{
+    /// <summary>
+    /// Adds infrastructure services required by the application.
+    /// </summary>
+    /// <param name="services">Service collection.</param>
+    /// <param name="configuration">Application configuration root.</param>
+    /// <returns>The same service collection.</returns>
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        var startupOptions = configuration
+            .GetSection(WeatherRefreshOptions.SectionName)
+            .Get<WeatherRefreshOptions>() ?? new WeatherRefreshOptions();
+
+        services
+            .AddOptions<WeatherRefreshOptions>()
+            .Bind(configuration.GetSection(WeatherRefreshOptions.SectionName))
+            .ValidateDataAnnotations()
+            .Validate(
+                static options => options.DemoMode || options.HasAnyEnabledProvider(),
+                "Enable at least one provider, or turn on demo mode.")
+            .Validate(
+                static options => AreEnabledProviderPrioritiesUnique(options),
+                "Enabled provider priorities must be unique.")
+            .Validate(
+                static options => AreApiKeysValidForEnabledProviders(options),
+                "Enabled providers requiring API keys must define keys.")
+            .ValidateOnStart();
+
+        services.AddMemoryCache();
+
+        services.AddSingleton<IDiveSiteCatalog, InMemoryDiveSiteCatalog>();
+        services.AddSingleton<IWeatherSnapshotRepository, InMemoryWeatherSnapshotRepository>();
+
+        if (startupOptions.DemoMode)
+        {
+            services.AddSingleton<DemoWeatherProvider>();
+            services.AddTransient<IWeatherProvider>(
+                serviceProvider => serviceProvider.GetRequiredService<DemoWeatherProvider>());
+        }
+        else
+        {
+            services.AddHttpClient<OpenMeteoProvider>(ConfigureHttpClient);
+            services.AddHttpClient<WeatherApiProvider>(ConfigureHttpClient);
+            services.AddHttpClient<OpenWeatherProvider>(ConfigureHttpClient);
+
+            services.AddTransient<IWeatherProvider>(
+                serviceProvider => serviceProvider.GetRequiredService<OpenMeteoProvider>());
+
+            services.AddTransient<IWeatherProvider>(
+                serviceProvider => serviceProvider.GetRequiredService<WeatherApiProvider>());
+
+            services.AddTransient<IWeatherProvider>(
+                serviceProvider => serviceProvider.GetRequiredService<OpenWeatherProvider>());
+        }
+
+        services.AddHostedService<WeatherRefreshService>();
+
+        return services;
+    }
+
+    private static void ConfigureHttpClient(
+        IServiceProvider serviceProvider,
+        HttpClient client)
+    {
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+        ArgumentNullException.ThrowIfNull(client);
+
+        var options = serviceProvider
+            .GetRequiredService<IOptions<WeatherRefreshOptions>>()
+            .Value;
+
+        client.Timeout = TimeSpan.FromSeconds(options.HttpTimeoutSeconds);
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("MaltaDiveWeather/1.0");
+    }
+
+    private static bool AreEnabledProviderPrioritiesUnique(
+        WeatherRefreshOptions options)
+    {
+        if (options.DemoMode)
+        {
+            return true;
+        }
+
+        var priorities = new List<int>();
+
+        if (options.Providers.OpenMeteo.Enabled)
+        {
+            priorities.Add(options.Providers.OpenMeteo.Priority);
+        }
+
+        if (options.Providers.WeatherApi.Enabled)
+        {
+            priorities.Add(options.Providers.WeatherApi.Priority);
+        }
+
+        if (options.Providers.OpenWeather.Enabled)
+        {
+            priorities.Add(options.Providers.OpenWeather.Priority);
+        }
+
+        return priorities.Count == priorities.Distinct().Count();
+    }
+
+    private static bool AreApiKeysValidForEnabledProviders(
+        WeatherRefreshOptions options)
+    {
+        if (options.DemoMode)
+        {
+            return true;
+        }
+
+        if (options.Providers.WeatherApi.Enabled &&
+            string.IsNullOrWhiteSpace(options.Providers.WeatherApi.ApiKey))
+        {
+            return false;
+        }
+
+        if (options.Providers.OpenWeather.Enabled &&
+            string.IsNullOrWhiteSpace(options.Providers.OpenWeather.ApiKey))
+        {
+            return false;
+        }
+
+        return true;
+    }
+}

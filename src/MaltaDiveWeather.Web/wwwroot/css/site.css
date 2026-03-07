@@ -1,0 +1,333 @@
+:root {
+    --bg-main: #040807;
+    --bg-panel: #07110f;
+    --bg-panel-soft: #0a1714;
+    --line-subtle: rgba(86, 124, 113, 0.35);
+    --line-strong: rgba(120, 170, 153, 0.6);
+    --text-primary: #ddf3e7;
+    --text-muted: #90ad9f;
+    --good: #4ae687;
+    --caution: #d5a245;
+    --rough: #dc5f5f;
+    --stale: #5c6c68;
+    --accent-cyan: #66bec4;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--text-primary);
+    background:
+        radial-gradient(circle at 20% -10%, rgba(34, 70, 63, 0.26), transparent 50%),
+        radial-gradient(circle at 85% 0%, rgba(37, 58, 70, 0.24), transparent 45%),
+        var(--bg-main);
+    font-family: "Space Mono", "IBM Plex Mono", Consolas, monospace;
+}
+
+.scanlines {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: linear-gradient(
+        rgba(255, 255, 255, 0.015) 1px,
+        transparent 1px
+    );
+    background-size: 100% 3px;
+    opacity: 0.35;
+}
+
+.hud-header,
+.hud-layout {
+    position: relative;
+    z-index: 1;
+}
+
+.hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--line-subtle);
+    background: rgba(7, 14, 12, 0.72);
+    backdrop-filter: blur(2px);
+}
+
+.hud-kicker {
+    margin: 0;
+    color: var(--accent-cyan);
+    letter-spacing: 0.14rem;
+    font-size: 0.7rem;
+}
+
+.hud-header h1 {
+    margin: 0.25rem 0 0;
+    font-size: 1.35rem;
+    letter-spacing: 0.05rem;
+    text-transform: uppercase;
+}
+
+.hud-refresh {
+    text-align: right;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+}
+
+.hud-refresh strong {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--text-primary);
+}
+
+.hud-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.radar-panel,
+.site-panel {
+    border: 1px solid var(--line-subtle);
+    background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-soft));
+    box-shadow: inset 0 0 0 1px rgba(90, 120, 111, 0.14);
+}
+
+.radar-panel {
+    padding: 0.8rem;
+}
+
+.panel-heading {
+    margin-bottom: 0.7rem;
+}
+
+.panel-heading h2 {
+    margin: 0;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06rem;
+}
+
+.panel-heading p {
+    margin: 0.25rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+#radarMap {
+    width: 100%;
+    height: auto;
+    border: 1px solid rgba(75, 106, 98, 0.5);
+    background: radial-gradient(circle at 50% 20%, #0a1815, #06100e);
+    aspect-ratio: 1000 / 620;
+}
+
+.legend {
+    margin-top: 0.65rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.swatch {
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.swatch-good {
+    background: var(--good);
+}
+
+.swatch-caution {
+    background: var(--caution);
+}
+
+.swatch-rough {
+    background: var(--rough);
+}
+
+.swatch-stale {
+    background: var(--stale);
+}
+
+.marker {
+    cursor: pointer;
+    --marker-color: var(--stale);
+}
+
+.marker line {
+    stroke: color-mix(in srgb, var(--marker-color) 72%, #0a0f0e);
+    stroke-width: 1.2;
+    opacity: 0.9;
+}
+
+.marker circle {
+    fill: color-mix(in srgb, var(--marker-color) 16%, transparent);
+    stroke: var(--marker-color);
+    stroke-width: 1.8;
+}
+
+.marker text {
+    fill: var(--text-primary);
+    font-size: 14px;
+    letter-spacing: 0.4px;
+}
+
+.marker--good {
+    --marker-color: var(--good);
+}
+
+.marker--caution {
+    --marker-color: var(--caution);
+}
+
+.marker--rough {
+    --marker-color: var(--rough);
+}
+
+.marker--stale {
+    --marker-color: var(--stale);
+}
+
+.marker.active circle {
+    stroke-width: 3;
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--marker-color) 65%, transparent));
+}
+
+.site-panel {
+    padding: 0.95rem;
+}
+
+.condition-badge {
+    display: inline-block;
+    margin: 0 0 0.85rem;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+}
+
+.condition-good {
+    border-color: var(--good);
+    color: var(--good);
+}
+
+.condition-caution {
+    border-color: var(--caution);
+    color: var(--caution);
+}
+
+.condition-rough {
+    border-color: var(--rough);
+    color: var(--rough);
+}
+
+.condition-unknown {
+    border-color: var(--stale);
+    color: var(--stale);
+}
+
+.metric-grid {
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+}
+
+.metric-grid div {
+    border: 1px solid rgba(87, 125, 112, 0.24);
+    background: rgba(8, 18, 15, 0.65);
+    padding: 0.45rem 0.5rem;
+}
+
+.metric-grid dt {
+    margin: 0;
+    font-size: 0.67rem;
+    letter-spacing: 0.06rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.metric-grid dd {
+    margin: 0.3rem 0 0;
+    font-size: 0.9rem;
+}
+
+.condition-summary {
+    margin: 0.85rem 0;
+    padding: 0.65rem;
+    border-left: 2px solid var(--line-strong);
+    background: rgba(18, 30, 26, 0.5);
+    font-size: 0.83rem;
+    color: var(--text-primary);
+}
+
+.provider-section h3 {
+    margin: 0 0 0.4rem;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06rem;
+    color: var(--accent-cyan);
+}
+
+#providerList {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.4rem;
+    max-height: 220px;
+    overflow: auto;
+}
+
+#providerList li {
+    border: 1px solid rgba(75, 102, 95, 0.3);
+    background: rgba(9, 16, 14, 0.7);
+    padding: 0.4rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.provider-ok {
+    color: var(--good);
+}
+
+.provider-failed {
+    color: var(--rough);
+}
+
+@media (max-width: 980px) {
+    .hud-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .hud-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hud-refresh {
+        text-align: left;
+    }
+
+    .metric-grid {
+        grid-template-columns: 1fr;
+    }
+}

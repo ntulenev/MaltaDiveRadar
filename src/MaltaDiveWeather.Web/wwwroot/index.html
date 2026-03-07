@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MaltaDiveRadar</title>
+    <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+    <div class="scanlines" aria-hidden="true"></div>
+
+    <header class="hud-header">
+        <div class="hud-title-block">
+            <h1>Malta Dive Weather</h1>
+        </div>
+        <div class="hud-refresh">
+            <span>Last refresh:</span>
+            <strong id="lastRefresh">Waiting for first sync...</strong>
+        </div>
+    </header>
+
+    <main class="hud-layout">
+        <section class="radar-panel" aria-label="Dive map panel">
+            <div class="panel-heading">
+                <h2>Malta + Gozo Dive Radar</h2>
+                <p>Tap or click markers for site detail</p>
+            </div>
+
+            <svg
+                id="radarMap"
+                viewBox="0 0 1000 620"
+                role="img"
+                aria-label="Stylized map of Malta, Gozo, and Comino with dive markers"
+            >
+                <image
+                    href="/assets/malta-gozo-map.svg"
+                    x="0"
+                    y="0"
+                    width="1000"
+                    height="620"
+                    preserveAspectRatio="xMidYMid meet"
+                ></image>
+                <g id="markerLayer"></g>
+            </svg>
+
+            <div class="legend">
+                <span><i class="swatch swatch-good"></i>Good</span>
+                <span><i class="swatch swatch-caution"></i>Caution</span>
+                <span><i class="swatch swatch-rough"></i>Rough</span>
+                <span><i class="swatch swatch-stale"></i>Stale / No data</span>
+            </div>
+        </section>
+
+        <aside class="site-panel" aria-live="polite">
+            <div class="panel-heading">
+                <h2 id="siteName">Select a dive site</h2>
+                <p id="siteMeta">Awaiting marker selection</p>
+            </div>
+
+            <div id="conditionBadge" class="condition-badge condition-unknown">
+                No Data
+            </div>
+
+            <dl class="metric-grid">
+                <div>
+                    <dt>Air Temp</dt>
+                    <dd id="airTemp">--</dd>
+                </div>
+                <div>
+                    <dt>Water Temp</dt>
+                    <dd id="waterTemp">--</dd>
+                </div>
+                <div>
+                    <dt>Wind Speed</dt>
+                    <dd id="windSpeed">--</dd>
+                </div>
+                <div>
+                    <dt>Wind Direction</dt>
+                    <dd id="windDirection">--</dd>
+                </div>
+                <div>
+                    <dt>Wave Height</dt>
+                    <dd id="waveHeight">--</dd>
+                </div>
+                <div>
+                    <dt>Sea State</dt>
+                    <dd id="seaState">--</dd>
+                </div>
+                <div>
+                    <dt>Observation</dt>
+                    <dd id="observationTime">--</dd>
+                </div>
+                <div>
+                    <dt>Updated</dt>
+                    <dd id="updatedTime">--</dd>
+                </div>
+                <div>
+                    <dt>Source</dt>
+                    <dd id="providerSource">--</dd>
+                </div>
+            </dl>
+
+            <p class="condition-summary" id="conditionSummary">
+                Choose a marker to inspect latest conditions.
+            </p>
+
+            <section class="provider-section">
+                <h3>Provider Diagnostics</h3>
+                <ul id="providerList"></ul>
+            </section>
+        </aside>
+    </main>
+
+    <script type="module" src="/js/main.js"></script>
+</body>
+</html>
