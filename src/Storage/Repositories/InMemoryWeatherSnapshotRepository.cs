@@ -191,7 +191,7 @@ public sealed class InMemoryWeatherSnapshotRepository : IWeatherSnapshotReposito
             return providerSnapshots;
         }
 
-        return Array.Empty<WeatherProviderSnapshot>();
+        return [];
     }
 
     private static string GetSiteCacheKey(int siteId)

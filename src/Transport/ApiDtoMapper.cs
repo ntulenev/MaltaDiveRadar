@@ -48,7 +48,7 @@ public static class ApiDtoMapper
             LastRefreshAttemptUtc = snapshot.LastRefreshAttemptUtc,
             SourceProvider = snapshot.SourceProvider.Value,
             IsStale = snapshot.IsStale,
-            ProviderSnapshots = snapshot.ProviderSnapshots
+            ProviderSnapshots = [.. snapshot.ProviderSnapshots
                 .OrderBy(static provider => provider.Priority.Value)
                 .Select(static provider => new ProviderSnapshotDto
                 {
@@ -59,8 +59,7 @@ public static class ApiDtoMapper
                     ObservationTimeUtc = provider.ObservationTimeUtc,
                     RetrievedAtUtc = provider.RetrievedAtUtc,
                     Error = provider.Error,
-                })
-                .ToArray(),
+                })],
         };
     }
 
@@ -71,10 +70,9 @@ public static class ApiDtoMapper
         return new LatestWeatherResponseDto
         {
             LastRefreshUtc = latestWeather.LastRefreshUtc,
-            Snapshots = latestWeather.Snapshots
+            Snapshots = [.. latestWeather.Snapshots
                 .OrderBy(static snapshot => snapshot.DiveSiteName.Value)
-                .Select(MapSnapshot)
-                .ToArray(),
+                .Select(MapSnapshot)],
         };
     }
 

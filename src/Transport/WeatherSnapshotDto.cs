@@ -94,6 +94,6 @@ public sealed record WeatherSnapshotDto
     /// Gets provider snapshots for diagnostics.
     /// </summary>
     public IReadOnlyCollection<ProviderSnapshotDto> ProviderSnapshots { get; init; } =
-        Array.Empty<ProviderSnapshotDto>();
+        [];
 }
 

@@ -77,8 +77,27 @@ internal static class ServiceCollectionExtensions
                 "Enabled providers requiring API keys must define keys.")
             .ValidateOnStart();
 
+        services
+            .AddOptions<DiveSiteCatalogOptions>()
+            .Bind(configuration.GetSection(DiveSiteCatalogOptions.SectionName))
+            .ValidateDataAnnotations()
+            .Validate(
+                static options => options.Sites.Count > 0,
+                "Configure at least one dive site.")
+            .Validate(
+                static options => AreDiveSiteIdsUnique(options),
+                "Dive site IDs must be unique.")
+            .Validate(
+                static options => AreDiveSiteTextValuesValid(options),
+                "Dive site names and islands must be non-empty.")
+            .Validate(
+                static options => AreDiveSiteNamesUnique(options),
+                "Dive site names must be unique.")
+            .ValidateOnStart();
+
         services.AddMemoryCache();
 
+        services.AddSingleton<DiveSiteSeedData>();
         services.AddSingleton<IDiveSiteCatalog, InMemoryDiveSiteCatalog>();
         services.AddSingleton<IWeatherSnapshotRepository, InMemoryWeatherSnapshotRepository>();
 
@@ -171,5 +190,30 @@ internal static class ServiceCollectionExtensions
         }
 
         return true;
+    }
+
+    private static bool AreDiveSiteIdsUnique(DiveSiteCatalogOptions options)
+    {
+        var ids = options.Sites
+            .Select(static site => site.Id)
+            .ToArray();
+
+        return ids.Length == ids.Distinct().Count();
+    }
+
+    private static bool AreDiveSiteNamesUnique(DiveSiteCatalogOptions options)
+    {
+        var names = options.Sites
+            .Select(static site => site.Name?.Trim() ?? string.Empty)
+            .ToArray();
+
+        return names.Length == names.Distinct(StringComparer.OrdinalIgnoreCase).Count();
+    }
+
+    private static bool AreDiveSiteTextValuesValid(DiveSiteCatalogOptions options)
+    {
+        return options.Sites.All(static site =>
+            !string.IsNullOrWhiteSpace(site.Name) &&
+            !string.IsNullOrWhiteSpace(site.Island));
     }
 }

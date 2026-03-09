@@ -42,9 +42,7 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
         _diveSiteCatalog = diveSiteCatalog;
         _snapshotRepository = snapshotRepository;
         _seaConditionClassifier = seaConditionClassifier;
-        _providers = providers
-            .OrderBy(static provider => provider.Priority.Value)
-            .ToArray();
+        _providers = [.. providers.OrderBy(static provider => provider.Priority.Value)];
         _timeProvider = timeProvider;
 
         if (_providers.Length == 0)
@@ -245,9 +243,8 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
             waveSource?.WaveHeightM,
             windSpeedSource?.WindSpeedMps);
 
-        DateTimeOffset? observationTimeUtc = successfulSnapshots
-            .Select(static snapshot => snapshot.ObservationTimeUtc)
-            .Max();
+        var observationTimeUtc = successfulSnapshots
+            .Max(static snapshot => snapshot.ObservationTimeUtc);
 
         var sourceProviders = new[]
             {

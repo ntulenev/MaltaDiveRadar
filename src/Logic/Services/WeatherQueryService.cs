@@ -31,9 +31,7 @@ public sealed class WeatherQueryService : IWeatherQueryService
     /// <inheritdoc />
     public IReadOnlyCollection<DiveSite> GetSites()
     {
-        return _diveSiteCatalog.GetAllSites()
-            .OrderBy(static site => site.Name.Value)
-            .ToArray();
+        return [.. _diveSiteCatalog.GetAllSites().OrderBy(static site => site.Name.Value)];
     }
 
     /// <inheritdoc />

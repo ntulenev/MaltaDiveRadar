@@ -11,12 +11,13 @@ public sealed class InMemoryDiveSiteCatalog : IDiveSiteCatalog
     /// <summary>
     /// Initializes a new instance of the <see cref="InMemoryDiveSiteCatalog"/> class.
     /// </summary>
-    public InMemoryDiveSiteCatalog()
+    /// <param name="diveSiteSeedData">Configured seed-data builder.</param>
+    public InMemoryDiveSiteCatalog(DiveSiteSeedData diveSiteSeedData)
     {
-        _allSites = DiveSiteSeedData.Create();
-        _activeSites = _allSites
-            .Where(static site => site.IsActive)
-            .ToArray();
+        ArgumentNullException.ThrowIfNull(diveSiteSeedData);
+
+        _allSites = diveSiteSeedData.Create();
+        _activeSites = [.. _allSites.Where(static site => site.IsActive)];
 
         _siteById = _allSites.ToDictionary(static site => site.Id.Value);
     }
