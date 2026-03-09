@@ -59,17 +59,18 @@ export function formatTimestamp(value) {
         return "--";
     }
 
-    const formatted = parsed.toLocaleString(undefined, {
+    const formatted = parsed.toLocaleString("en-MT", {
         year: "numeric",
         month: "short",
         day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
-        timeZone: "UTC",
+        timeZone: "Europe/Malta",
+        timeZoneName: "short",
     });
 
-    return `${formatted} UTC`;
+    return formatted;
 }
 
 export function markerClass(snapshot) {

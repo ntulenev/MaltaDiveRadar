@@ -7,7 +7,7 @@ import {
     formatWaveHeight,
     formatWindSpeed,
     markerClass,
-} from "./shared.js?v=20260309.1";
+} from "./shared.js?v=20260309.2";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
