@@ -5,9 +5,6 @@ namespace Models;
 /// </summary>
 public sealed record WaveHeight
 {
-    private const double HIGH_WAVES_THRESHOLD_M = 1.2D;
-    private const double MODERATE_WAVES_THRESHOLD_M = 0.5D;
-
     private WaveHeight(double meters)
     {
         if (meters < 0D)
@@ -56,4 +53,7 @@ public sealed record WaveHeight
     {
         return Meters >= MODERATE_WAVES_THRESHOLD_M;
     }
+
+    private const double HIGH_WAVES_THRESHOLD_M = 1.2D;
+    private const double MODERATE_WAVES_THRESHOLD_M = 0.5D;
 }

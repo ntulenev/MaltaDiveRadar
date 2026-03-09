@@ -13,11 +13,6 @@ public sealed partial class WeatherRefreshProcessor :
     IWeatherRefreshProcessor,
     IDisposable
 {
-    private readonly ILogger<WeatherRefreshProcessor> _logger;
-    private readonly IWeatherAggregationService _weatherAggregationService;
-    private readonly TimeProvider _timeProvider;
-    private readonly SemaphoreSlim _refreshLock;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="WeatherRefreshProcessor"/> class.
     /// </summary>
@@ -129,4 +124,9 @@ public sealed partial class WeatherRefreshProcessor :
     private static partial void LogRefreshCycleFailed(
         ILogger logger,
         Exception exception);
+
+    private readonly ILogger<WeatherRefreshProcessor> _logger;
+    private readonly IWeatherAggregationService _weatherAggregationService;
+    private readonly TimeProvider _timeProvider;
+    private readonly SemaphoreSlim _refreshLock;
 }

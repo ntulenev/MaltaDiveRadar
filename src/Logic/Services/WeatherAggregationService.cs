@@ -13,13 +13,6 @@ namespace Logic.Services;
 /// </summary>
 public sealed partial class WeatherAggregationService : IWeatherAggregationService
 {
-    private readonly ILogger<WeatherAggregationService> _logger;
-    private readonly IDiveSiteCatalog _diveSiteCatalog;
-    private readonly IWeatherSnapshotRepository _snapshotRepository;
-    private readonly ISeaConditionClassifier _seaConditionClassifier;
-    private readonly IWeatherProvider[] _providers;
-    private readonly TimeProvider _timeProvider;
-
     /// <summary>
     /// Initializes a new instance of the
     /// <see cref="WeatherAggregationService"/> class.
@@ -49,7 +42,9 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
         _diveSiteCatalog = diveSiteCatalog;
         _snapshotRepository = snapshotRepository;
         _seaConditionClassifier = seaConditionClassifier;
-        _providers = providers.OrderBy(static provider => provider.Priority).ToArray();
+        _providers = providers
+            .OrderBy(static provider => provider.Priority.Value)
+            .ToArray();
         _timeProvider = timeProvider;
 
         if (_providers.Length == 0)
@@ -112,7 +107,7 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
             LogAllProvidersFailed(
                 _logger,
                 site.Id.Value,
-                site.Name);
+                site.Name.Value);
 
             await _snapshotRepository.MarkStaleAsync(
                 site.Id,
@@ -160,7 +155,7 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
         LogSiteAggregationSucceeded(
             _logger,
             site.Id.Value,
-            aggregatedSnapshot.SourceProvider);
+            aggregatedSnapshot.SourceProvider.Value);
 
         return aggregatedSnapshot;
     }
@@ -184,9 +179,9 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
             LogProviderResult(
                 _logger,
                 provider.ProviderName.Value,
-                site.Name,
+                site.Name.Value,
                 snapshot.IsSuccess,
-                snapshot.QualityScore);
+                snapshot.QualityScore.Value);
 
             return snapshot;
         }
@@ -196,14 +191,16 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
                 _logger,
                 exception,
                 provider.ProviderName.Value,
-                site.Name);
+                site.Name.Value);
+
+            var providerMetadata = new WeatherProviderMetadata(
+                provider.ProviderName,
+                provider.Priority,
+                provider.SupportsMarineData);
 
             return WeatherProviderSnapshot.CreateFailure(
-                provider.ProviderName.Value,
-                provider.Priority,
-                provider.SupportsMarineData,
+                providerMetadata,
                 _timeProvider.GetUtcNow(),
-                string.Empty,
                 exception.Message);
         }
     }
@@ -241,12 +238,12 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
 
         var seaTextSource = SelectBestProviderForMetric(
             successfulSnapshots,
-            static snapshot => !string.IsNullOrWhiteSpace(snapshot.SeaStateText),
+            static snapshot => snapshot.SeaStateText is not null,
             true);
 
         var condition = _seaConditionClassifier.Evaluate(
-            ToWaveHeight(waveSource?.WaveHeightM),
-            ToWindSpeed(windSpeedSource?.WindSpeedMps));
+            waveSource?.WaveHeightM,
+            windSpeedSource?.WindSpeedMps);
 
         DateTimeOffset? observationTimeUtc = successfulSnapshots
             .Select(static snapshot => snapshot.ObservationTimeUtc)
@@ -261,73 +258,60 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
                 waveSource?.ProviderName,
                 seaTextSource?.ProviderName,
             }
-            .Where(static source => !string.IsNullOrWhiteSpace(source))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OfType<ProviderName>()
             .ToArray();
 
-        var sourceProviderLabel = sourceProviders.Length > 0
-            ? string.Join(" + ", sourceProviders)
-            : successfulSnapshots
-                .OrderBy(static snapshot => snapshot.Priority)
-                .First()
-                .ProviderName;
+        var sourceProvider = sourceProviders.Length > 0
+            ? SourceProvider.Compose(sourceProviders)
+            : SourceProvider.FromProvider(
+                successfulSnapshots
+                    .OrderBy(static snapshot => snapshot.Priority.Value)
+                    .First()
+                    .ProviderName);
 
         var conditionSummary = BuildConditionSummary(
             condition,
             seaTextSource?.SeaStateText);
-
-        return new WeatherSnapshot(
-            site.Id,
-            site.Name,
-            site.Island,
+        var metrics = new WeatherMetrics(
             airSource?.AirTemperatureC,
             waterSource?.WaterTemperatureC,
             windSpeedSource?.WindSpeedMps,
             windDirectionSource?.WindDirectionDeg,
             waveSource?.WaveHeightM,
-            seaTextSource?.SeaStateText,
+            seaTextSource?.SeaStateText);
+        var siteInfo = DiveSiteSnapshotInfo.FromDiveSite(site);
+        var snapshotCondition = new WeatherSnapshotCondition(
             condition.Status,
-            conditionSummary,
+            conditionSummary);
+        var timing = new WeatherSnapshotTiming(
             observationTimeUtc,
             _timeProvider.GetUtcNow(),
-            refreshAttemptUtc,
-            sourceProviderLabel,
+            refreshAttemptUtc);
+        var provenance = new WeatherSnapshotProvenance(
+            sourceProvider,
             false,
             allProviderSnapshots);
+
+        return new WeatherSnapshot(
+            siteInfo,
+            metrics,
+            snapshotCondition,
+            timing,
+            provenance);
     }
 
-    private static string BuildConditionSummary(
+    private static SeaConditionSummary BuildConditionSummary(
         SeaConditionEvaluation condition,
-        string? seaStateText)
+        SeaStateText? seaStateText)
     {
         ArgumentNullException.ThrowIfNull(condition);
 
-        if (!string.IsNullOrWhiteSpace(seaStateText))
+        if (seaStateText is not null)
         {
-            return seaStateText;
+            return SeaConditionSummary.From(seaStateText.Value);
         }
 
-        return condition.Summary;
-    }
-
-    private static WaveHeight? ToWaveHeight(double? waveHeightM)
-    {
-        if (waveHeightM is null)
-        {
-            return null;
-        }
-
-        return WaveHeight.FromMeters(waveHeightM.Value);
-    }
-
-    private static WindSpeed? ToWindSpeed(double? windSpeedMps)
-    {
-        if (windSpeedMps is null)
-        {
-            return null;
-        }
-
-        return WindSpeed.FromMetersPerSecond(windSpeedMps.Value);
+        return SeaConditionSummary.From(condition.Summary);
     }
 
     private static WeatherProviderSnapshot? SelectBestProviderForMetric(
@@ -362,8 +346,8 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
         return matchingCandidates
             .OrderByDescending(static snapshot =>
                 snapshot.ObservationTimeUtc ?? DateTimeOffset.MinValue)
-            .ThenByDescending(static snapshot => snapshot.QualityScore)
-            .ThenBy(static snapshot => snapshot.Priority)
+            .ThenByDescending(static snapshot => snapshot.QualityScore.Value)
+            .ThenBy(static snapshot => snapshot.Priority.Value)
             .First();
     }
 
@@ -419,4 +403,11 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
         Exception exception,
         string providerName,
         string siteName);
+
+    private readonly ILogger<WeatherAggregationService> _logger;
+    private readonly IDiveSiteCatalog _diveSiteCatalog;
+    private readonly IWeatherSnapshotRepository _snapshotRepository;
+    private readonly ISeaConditionClassifier _seaConditionClassifier;
+    private readonly IWeatherProvider[] _providers;
+    private readonly TimeProvider _timeProvider;
 }

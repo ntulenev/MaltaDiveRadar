@@ -13,15 +13,6 @@ namespace Storage.Repositories;
 /// </summary>
 public sealed class InMemoryWeatherSnapshotRepository : IWeatherSnapshotRepository
 {
-    private const string LATEST_CACHE_KEY = "weather:snapshots:latest";
-    private const string SITE_CACHE_PREFIX = "weather:snapshot:";
-    private const string PROVIDER_CACHE_PREFIX = "weather:provider:";
-
-    private readonly IMemoryCache _memoryCache;
-    private readonly ConcurrentDictionary<int, WeatherSnapshot> _snapshots;
-    private readonly ConcurrentDictionary<int, IReadOnlyList<WeatherProviderSnapshot>>
-        _providerSnapshots;
-
     /// <summary>
     /// Initializes a new instance of the
     /// <see cref="InMemoryWeatherSnapshotRepository"/> class.
@@ -165,7 +156,7 @@ public sealed class InMemoryWeatherSnapshotRepository : IWeatherSnapshotReposito
         }
 
         var latestSnapshots = _snapshots.Values
-            .OrderBy(static snapshot => snapshot.DiveSiteName)
+            .OrderBy(static snapshot => snapshot.DiveSiteName.Value)
             .ToArray();
 
         _memoryCache.Set(
@@ -212,4 +203,13 @@ public sealed class InMemoryWeatherSnapshotRepository : IWeatherSnapshotReposito
     {
         return $"{PROVIDER_CACHE_PREFIX}{siteId}";
     }
+
+    private const string LATEST_CACHE_KEY = "weather:snapshots:latest";
+    private const string SITE_CACHE_PREFIX = "weather:snapshot:";
+    private const string PROVIDER_CACHE_PREFIX = "weather:provider:";
+
+    private readonly IMemoryCache _memoryCache;
+    private readonly ConcurrentDictionary<int, WeatherSnapshot> _snapshots;
+    private readonly ConcurrentDictionary<int, IReadOnlyList<WeatherProviderSnapshot>>
+        _providerSnapshots;
 }

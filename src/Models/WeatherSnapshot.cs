@@ -8,189 +8,141 @@ public sealed class WeatherSnapshot
     /// <summary>
     /// Initializes a new instance of the <see cref="WeatherSnapshot"/> class.
     /// </summary>
-    /// <param name="diveSiteId">Dive-site identifier.</param>
-    /// <param name="diveSiteName">Dive-site display name.</param>
-    /// <param name="island">Island display name.</param>
-    /// <param name="airTemperatureC">Air temperature in Celsius.</param>
-    /// <param name="waterTemperatureC">Water temperature in Celsius.</param>
-    /// <param name="windSpeedMps">Wind speed in meters per second.</param>
-    /// <param name="windDirectionDeg">Wind direction in degrees.</param>
-    /// <param name="waveHeightM">Wave height in meters.</param>
-    /// <param name="seaStateText">Sea state text.</param>
-    /// <param name="conditionStatus">Classified condition status.</param>
-    /// <param name="conditionSummary">Short summary text.</param>
-    /// <param name="observationTimeUtc">Observation time in UTC.</param>
-    /// <param name="lastUpdatedUtc">Last successful update timestamp in UTC.</param>
-    /// <param name="lastRefreshAttemptUtc">Last refresh attempt timestamp in UTC.</param>
-    /// <param name="sourceProvider">Source provider label.</param>
-    /// <param name="isStale">Whether snapshot is stale.</param>
-    /// <param name="providerSnapshots">Provider snapshots from refresh cycle.</param>
+    /// <param name="site">Grouped dive-site identity values.</param>
+    /// <param name="metrics">Grouped weather metric values.</param>
+    /// <param name="condition">Grouped condition classification values.</param>
+    /// <param name="timing">Grouped timing metadata.</param>
+    /// <param name="provenance">Grouped provider provenance metadata.</param>
     public WeatherSnapshot(
-        DiveSiteId diveSiteId,
-        string diveSiteName,
-        string island,
-        double? airTemperatureC,
-        double? waterTemperatureC,
-        double? windSpeedMps,
-        int? windDirectionDeg,
-        double? waveHeightM,
-        string? seaStateText,
-        SeaConditionStatus conditionStatus,
-        string conditionSummary,
-        DateTimeOffset? observationTimeUtc,
-        DateTimeOffset lastUpdatedUtc,
-        DateTimeOffset lastRefreshAttemptUtc,
-        string sourceProvider,
-        bool isStale,
-        IReadOnlyList<WeatherProviderSnapshot> providerSnapshots)
+        DiveSiteSnapshotInfo site,
+        WeatherMetrics metrics,
+        WeatherSnapshotCondition condition,
+        WeatherSnapshotTiming timing,
+        WeatherSnapshotProvenance provenance)
     {
-        ArgumentNullException.ThrowIfNull(diveSiteId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(diveSiteName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(island);
-        ArgumentException.ThrowIfNullOrWhiteSpace(conditionSummary);
-        ArgumentException.ThrowIfNullOrWhiteSpace(sourceProvider);
-        ArgumentNullException.ThrowIfNull(providerSnapshots);
+        ArgumentNullException.ThrowIfNull(site);
+        ArgumentNullException.ThrowIfNull(metrics);
+        ArgumentNullException.ThrowIfNull(condition);
+        ArgumentNullException.ThrowIfNull(timing);
+        ArgumentNullException.ThrowIfNull(provenance);
 
-        if (lastUpdatedUtc == default)
-        {
-            throw new ArgumentException(
-                "Last updated timestamp must be defined.",
-                nameof(lastUpdatedUtc));
-        }
-
-        if (lastRefreshAttemptUtc == default)
-        {
-            throw new ArgumentException(
-                "Last refresh attempt timestamp must be defined.",
-                nameof(lastRefreshAttemptUtc));
-        }
-
-        if (windDirectionDeg is < 0 or > 359)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(windDirectionDeg),
-                "Wind direction must be in range [0, 359].");
-        }
-
-        if (windSpeedMps < 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(windSpeedMps),
-                "Wind speed must be non-negative.");
-        }
-
-        if (waveHeightM < 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(waveHeightM),
-                "Wave height must be non-negative.");
-        }
-
-        DiveSiteId = diveSiteId;
-        DiveSiteName = diveSiteName.Trim();
-        Island = island.Trim();
-        AirTemperatureC = airTemperatureC;
-        WaterTemperatureC = waterTemperatureC;
-        WindSpeedMps = windSpeedMps;
-        WindDirectionDeg = windDirectionDeg;
-        WaveHeightM = waveHeightM;
-        SeaStateText = string.IsNullOrWhiteSpace(seaStateText)
-            ? null
-            : seaStateText.Trim();
-        ConditionStatus = conditionStatus;
-        ConditionSummary = conditionSummary.Trim();
-        ObservationTimeUtc = observationTimeUtc;
-        LastUpdatedUtc = lastUpdatedUtc;
-        LastRefreshAttemptUtc = lastRefreshAttemptUtc;
-        SourceProvider = sourceProvider.Trim();
-        IsStale = isStale;
-        ProviderSnapshots = providerSnapshots.ToArray();
+        Site = site;
+        Metrics = metrics;
+        Condition = condition;
+        Timing = timing;
+        Provenance = provenance;
     }
+
+    /// <summary>
+    /// Gets grouped dive-site identity values.
+    /// </summary>
+    public DiveSiteSnapshotInfo Site { get; }
+
+    /// <summary>
+    /// Gets grouped weather metric values.
+    /// </summary>
+    public WeatherMetrics Metrics { get; }
+
+    /// <summary>
+    /// Gets grouped condition classification values.
+    /// </summary>
+    public WeatherSnapshotCondition Condition { get; }
+
+    /// <summary>
+    /// Gets grouped timing metadata.
+    /// </summary>
+    public WeatherSnapshotTiming Timing { get; }
+
+    /// <summary>
+    /// Gets grouped provider provenance metadata.
+    /// </summary>
+    public WeatherSnapshotProvenance Provenance { get; }
 
     /// <summary>
     /// Gets dive-site ID.
     /// </summary>
-    public DiveSiteId DiveSiteId { get; }
+    public DiveSiteId DiveSiteId => Site.DiveSiteId;
 
     /// <summary>
     /// Gets dive-site display name.
     /// </summary>
-    public string DiveSiteName { get; }
+    public DiveSiteName DiveSiteName => Site.DiveSiteName;
 
     /// <summary>
     /// Gets island display name.
     /// </summary>
-    public string Island { get; }
+    public IslandName Island => Site.Island;
 
     /// <summary>
-    /// Gets air temperature in Celsius.
+    /// Gets air-temperature value.
     /// </summary>
-    public double? AirTemperatureC { get; }
+    public AirTemperature? AirTemperatureC => Metrics.AirTemperatureC;
 
     /// <summary>
-    /// Gets water temperature in Celsius.
+    /// Gets water-temperature value.
     /// </summary>
-    public double? WaterTemperatureC { get; }
+    public WaterTemperature? WaterTemperatureC => Metrics.WaterTemperatureC;
 
     /// <summary>
-    /// Gets wind speed in meters per second.
+    /// Gets wind-speed value.
     /// </summary>
-    public double? WindSpeedMps { get; }
+    public WindSpeed? WindSpeedMps => Metrics.WindSpeedMps;
 
     /// <summary>
-    /// Gets wind direction in degrees.
+    /// Gets wind-direction value.
     /// </summary>
-    public int? WindDirectionDeg { get; }
+    public WindDirection? WindDirectionDeg => Metrics.WindDirectionDeg;
 
     /// <summary>
-    /// Gets wave height in meters.
+    /// Gets wave-height value.
     /// </summary>
-    public double? WaveHeightM { get; }
+    public WaveHeight? WaveHeightM => Metrics.WaveHeightM;
 
     /// <summary>
-    /// Gets sea state text.
+    /// Gets sea-state text.
     /// </summary>
-    public string? SeaStateText { get; }
+    public SeaStateText? SeaStateText => Metrics.SeaStateText;
 
     /// <summary>
     /// Gets summarized condition status.
     /// </summary>
-    public SeaConditionStatus ConditionStatus { get; }
+    public SeaConditionStatus ConditionStatus => Condition.Status;
 
     /// <summary>
-    /// Gets short summary text.
+    /// Gets short summary value.
     /// </summary>
-    public string ConditionSummary { get; }
+    public SeaConditionSummary ConditionSummary => Condition.Summary;
 
     /// <summary>
     /// Gets the latest observation time in UTC used in this snapshot.
     /// </summary>
-    public DateTimeOffset? ObservationTimeUtc { get; }
+    public DateTimeOffset? ObservationTimeUtc => Timing.ObservationTimeUtc;
 
     /// <summary>
     /// Gets the timestamp when this snapshot was last refreshed in UTC.
     /// </summary>
-    public DateTimeOffset LastUpdatedUtc { get; }
+    public DateTimeOffset LastUpdatedUtc => Timing.LastUpdatedUtc;
 
     /// <summary>
     /// Gets timestamp of the last refresh attempt in UTC.
     /// </summary>
-    public DateTimeOffset LastRefreshAttemptUtc { get; }
+    public DateTimeOffset LastRefreshAttemptUtc => Timing.LastRefreshAttemptUtc;
 
     /// <summary>
     /// Gets provider name(s) that supplied selected values.
     /// </summary>
-    public string SourceProvider { get; }
+    public SourceProvider SourceProvider => Provenance.SourceProvider;
 
     /// <summary>
     /// Gets a value indicating whether this snapshot is stale.
     /// </summary>
-    public bool IsStale { get; }
+    public bool IsStale => Provenance.IsStale;
 
     /// <summary>
     /// Gets provider snapshots captured during the refresh cycle.
     /// </summary>
-    public IReadOnlyList<WeatherProviderSnapshot> ProviderSnapshots { get; }
+    public IReadOnlyList<WeatherProviderSnapshot> ProviderSnapshots =>
+        Provenance.ProviderSnapshots;
 
     /// <summary>
     /// Creates an unavailable snapshot when all providers fail.
@@ -214,24 +166,25 @@ public sealed class WeatherSnapshot
                 nameof(refreshAttemptUtc));
         }
 
-        return new WeatherSnapshot(
-            site.Id,
-            site.Name,
-            site.Island,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
+        var siteInfo = DiveSiteSnapshotInfo.FromDiveSite(site);
+        var condition = new WeatherSnapshotCondition(
             SeaConditionStatus.Unknown,
-            "No provider data available",
+            SeaConditionSummary.From("No provider data available"));
+        var timing = new WeatherSnapshotTiming(
             null,
             refreshAttemptUtc,
-            refreshAttemptUtc,
-            "Unavailable",
+            refreshAttemptUtc);
+        var provenance = new WeatherSnapshotProvenance(
+            SourceProvider.FromLabel("Unavailable"),
             true,
             providerSnapshots);
+
+        return new WeatherSnapshot(
+            siteInfo,
+            WeatherMetrics.Empty,
+            condition,
+            timing,
+            provenance);
     }
 
     /// <summary>
@@ -249,23 +202,11 @@ public sealed class WeatherSnapshot
         }
 
         return new WeatherSnapshot(
-            DiveSiteId,
-            DiveSiteName,
-            Island,
-            AirTemperatureC,
-            WaterTemperatureC,
-            WindSpeedMps,
-            WindDirectionDeg,
-            WaveHeightM,
-            SeaStateText,
-            ConditionStatus,
-            ConditionSummary,
-            ObservationTimeUtc,
-            LastUpdatedUtc,
-            refreshAttemptUtc,
-            SourceProvider,
-            true,
-            ProviderSnapshots);
+            Site,
+            Metrics,
+            Condition,
+            Timing.WithRefreshAttempt(refreshAttemptUtc),
+            Provenance.MarkStale());
     }
 
     /// <summary>
@@ -279,22 +220,10 @@ public sealed class WeatherSnapshot
         ArgumentNullException.ThrowIfNull(providerSnapshots);
 
         return new WeatherSnapshot(
-            DiveSiteId,
-            DiveSiteName,
-            Island,
-            AirTemperatureC,
-            WaterTemperatureC,
-            WindSpeedMps,
-            WindDirectionDeg,
-            WaveHeightM,
-            SeaStateText,
-            ConditionStatus,
-            ConditionSummary,
-            ObservationTimeUtc,
-            LastUpdatedUtc,
-            LastRefreshAttemptUtc,
-            SourceProvider,
-            IsStale,
-            providerSnapshots);
+            Site,
+            Metrics,
+            Condition,
+            Timing,
+            Provenance.WithProviderSnapshots(providerSnapshots));
     }
 }

@@ -2,6 +2,7 @@ using Abstractions;
 
 using Logic.Services;
 
+using MaltaDiveWeather.Web.Configuration;
 using MaltaDiveWeather.Web.Services;
 
 using Microsoft.Extensions.Configuration;
@@ -54,6 +55,12 @@ internal static class ServiceCollectionExtensions
         var startupOptions = configuration
             .GetSection(WeatherRefreshOptions.SectionName)
             .Get<WeatherRefreshOptions>() ?? new WeatherRefreshOptions();
+
+        services
+            .AddOptions<WeatherRefreshScheduleOptions>()
+            .Bind(configuration.GetSection(WeatherRefreshOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         services
             .AddOptions<WeatherRefreshOptions>()

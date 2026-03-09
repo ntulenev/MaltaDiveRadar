@@ -6,59 +6,15 @@ namespace Models;
 public sealed class WeatherProviderSnapshot
 {
     private WeatherProviderSnapshot(
-        string providerName,
-        int priority,
-        bool supportsMarineData,
+        WeatherProviderMetadata provider,
         bool isSuccess,
-        double? airTemperatureC,
-        double? waterTemperatureC,
-        double? windSpeedMps,
-        int? windDirectionDeg,
-        double? waveHeightM,
-        string? seaStateText,
-        DateTimeOffset? observationTimeUtc,
-        DateTimeOffset retrievedAtUtc,
-        string rawPayloadJson,
-        double qualityScore,
+        WeatherMetrics metrics,
+        ProviderFetchInfo fetchInfo,
         string? error)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(providerName);
-        ArgumentNullException.ThrowIfNull(rawPayloadJson);
-
-        if (priority <= 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(priority),
-                "Provider priority must be positive.");
-        }
-
-        if (qualityScore is < 0 or > 1)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(qualityScore),
-                "Quality score must be in range [0, 1].");
-        }
-
-        if (windDirectionDeg is < 0 or > 359)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(windDirectionDeg),
-                "Wind direction must be in range [0, 359].");
-        }
-
-        if (windSpeedMps < 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(windSpeedMps),
-                "Wind speed must be non-negative.");
-        }
-
-        if (waveHeightM < 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(waveHeightM),
-                "Wave height must be non-negative.");
-        }
+        ArgumentNullException.ThrowIfNull(provider);
+        ArgumentNullException.ThrowIfNull(metrics);
+        ArgumentNullException.ThrowIfNull(fetchInfo);
 
         if (!isSuccess && string.IsNullOrWhiteSpace(error))
         {
@@ -67,41 +23,44 @@ public sealed class WeatherProviderSnapshot
                 nameof(error));
         }
 
-        ProviderName = providerName.Trim();
-        Priority = priority;
-        SupportsMarineData = supportsMarineData;
+        Provider = provider;
         IsSuccess = isSuccess;
-        AirTemperatureC = airTemperatureC;
-        WaterTemperatureC = waterTemperatureC;
-        WindSpeedMps = windSpeedMps;
-        WindDirectionDeg = windDirectionDeg;
-        WaveHeightM = waveHeightM;
-        SeaStateText = string.IsNullOrWhiteSpace(seaStateText)
-            ? null
-            : seaStateText.Trim();
-        ObservationTimeUtc = observationTimeUtc;
-        RetrievedAtUtc = retrievedAtUtc;
-        RawPayloadJson = rawPayloadJson;
-        QualityScore = qualityScore;
+        Metrics = metrics;
+        FetchInfo = fetchInfo;
         Error = string.IsNullOrWhiteSpace(error)
             ? null
             : error.Trim();
     }
 
     /// <summary>
+    /// Gets grouped provider metadata.
+    /// </summary>
+    public WeatherProviderMetadata Provider { get; }
+
+    /// <summary>
+    /// Gets grouped weather metrics.
+    /// </summary>
+    public WeatherMetrics Metrics { get; }
+
+    /// <summary>
+    /// Gets grouped provider fetch metadata.
+    /// </summary>
+    public ProviderFetchInfo FetchInfo { get; }
+
+    /// <summary>
     /// Gets the provider display name.
     /// </summary>
-    public string ProviderName { get; }
+    public ProviderName ProviderName => Provider.ProviderName;
 
     /// <summary>
     /// Gets provider priority where lower value means higher preference.
     /// </summary>
-    public int Priority { get; }
+    public ProviderPriority Priority => Provider.Priority;
 
     /// <summary>
     /// Gets a value indicating whether this provider can return marine data.
     /// </summary>
-    public bool SupportsMarineData { get; }
+    public bool SupportsMarineData => Provider.SupportsMarineData;
 
     /// <summary>
     /// Gets a value indicating whether this provider call succeeded.
@@ -109,54 +68,49 @@ public sealed class WeatherProviderSnapshot
     public bool IsSuccess { get; }
 
     /// <summary>
-    /// Gets air temperature in Celsius.
+    /// Gets air-temperature value.
     /// </summary>
-    public double? AirTemperatureC { get; }
+    public AirTemperature? AirTemperatureC => Metrics.AirTemperatureC;
 
     /// <summary>
-    /// Gets sea surface temperature in Celsius.
+    /// Gets sea-surface temperature value.
     /// </summary>
-    public double? WaterTemperatureC { get; }
+    public WaterTemperature? WaterTemperatureC => Metrics.WaterTemperatureC;
 
     /// <summary>
-    /// Gets wind speed in meters per second.
+    /// Gets wind-speed value.
     /// </summary>
-    public double? WindSpeedMps { get; }
+    public WindSpeed? WindSpeedMps => Metrics.WindSpeedMps;
 
     /// <summary>
-    /// Gets wind direction in degrees.
+    /// Gets wind-direction value.
     /// </summary>
-    public int? WindDirectionDeg { get; }
+    public WindDirection? WindDirectionDeg => Metrics.WindDirectionDeg;
 
     /// <summary>
-    /// Gets wave height in meters.
+    /// Gets wave-height value.
     /// </summary>
-    public double? WaveHeightM { get; }
+    public WaveHeight? WaveHeightM => Metrics.WaveHeightM;
 
     /// <summary>
     /// Gets textual sea-state summary from provider or normalization.
     /// </summary>
-    public string? SeaStateText { get; }
+    public SeaStateText? SeaStateText => Metrics.SeaStateText;
 
     /// <summary>
     /// Gets the provider observation timestamp in UTC.
     /// </summary>
-    public DateTimeOffset? ObservationTimeUtc { get; }
+    public DateTimeOffset? ObservationTimeUtc => FetchInfo.ObservationTimeUtc;
 
     /// <summary>
     /// Gets the fetch completion timestamp in UTC.
     /// </summary>
-    public DateTimeOffset RetrievedAtUtc { get; }
-
-    /// <summary>
-    /// Gets provider payload used for debug and diagnostics.
-    /// </summary>
-    public string RawPayloadJson { get; }
+    public DateTimeOffset RetrievedAtUtc => FetchInfo.RetrievedAtUtc;
 
     /// <summary>
     /// Gets normalized confidence score in range [0,1].
     /// </summary>
-    public double QualityScore { get; }
+    public QualityScore QualityScore => FetchInfo.QualityScore;
 
     /// <summary>
     /// Gets failure detail when <see cref="IsSuccess"/> is false.
@@ -166,86 +120,56 @@ public sealed class WeatherProviderSnapshot
     /// <summary>
     /// Creates a successful snapshot.
     /// </summary>
-    /// <param name="providerName">Provider display name.</param>
-    /// <param name="priority">Provider priority where lower is better.</param>
-    /// <param name="supportsMarineData">Whether provider supports marine data.</param>
-    /// <param name="airTemperatureC">Air temperature in Celsius.</param>
-    /// <param name="waterTemperatureC">Water temperature in Celsius.</param>
-    /// <param name="windSpeedMps">Wind speed in meters per second.</param>
-    /// <param name="windDirectionDeg">Wind direction in degrees.</param>
-    /// <param name="waveHeightM">Wave height in meters.</param>
-    /// <param name="seaStateText">Sea state summary text.</param>
-    /// <param name="observationTimeUtc">Observation timestamp in UTC.</param>
-    /// <param name="retrievedAtUtc">Fetch completion timestamp in UTC.</param>
-    /// <param name="rawPayloadJson">Raw response payload JSON.</param>
-    /// <param name="qualityScore">Quality score in range [0,1].</param>
+    /// <param name="provider">Grouped provider metadata.</param>
+    /// <param name="metrics">Grouped weather metrics.</param>
+    /// <param name="fetchInfo">Grouped provider fetch metadata.</param>
     /// <returns>Successful snapshot.</returns>
     public static WeatherProviderSnapshot CreateSuccess(
-        string providerName,
-        int priority,
-        bool supportsMarineData,
-        double? airTemperatureC,
-        double? waterTemperatureC,
-        double? windSpeedMps,
-        int? windDirectionDeg,
-        double? waveHeightM,
-        string? seaStateText,
-        DateTimeOffset? observationTimeUtc,
-        DateTimeOffset retrievedAtUtc,
-        string rawPayloadJson,
-        double qualityScore)
+        WeatherProviderMetadata provider,
+        WeatherMetrics metrics,
+        ProviderFetchInfo fetchInfo)
     {
         return new WeatherProviderSnapshot(
-            providerName,
-            priority,
-            supportsMarineData,
+            provider,
             true,
-            airTemperatureC,
-            waterTemperatureC,
-            windSpeedMps,
-            windDirectionDeg,
-            waveHeightM,
-            seaStateText,
-            observationTimeUtc,
-            retrievedAtUtc,
-            rawPayloadJson,
-            qualityScore,
+            metrics,
+            fetchInfo,
             null);
     }
 
     /// <summary>
     /// Creates a failed snapshot.
     /// </summary>
-    /// <param name="providerName">Provider display name.</param>
-    /// <param name="priority">Provider priority where lower is better.</param>
-    /// <param name="supportsMarineData">Whether provider supports marine data.</param>
+    /// <param name="provider">Grouped provider metadata.</param>
     /// <param name="retrievedAtUtc">Fetch completion timestamp in UTC.</param>
-    /// <param name="rawPayloadJson">Raw response payload JSON.</param>
     /// <param name="error">Failure details.</param>
     /// <returns>Failed snapshot.</returns>
     public static WeatherProviderSnapshot CreateFailure(
-        string providerName,
-        int priority,
-        bool supportsMarineData,
+        WeatherProviderMetadata provider,
         DateTimeOffset retrievedAtUtc,
-        string rawPayloadJson,
         string error)
     {
-        return new WeatherProviderSnapshot(
-            providerName,
-            priority,
-            supportsMarineData,
-            false,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
+        return CreateFailureWithoutMetrics(
+            provider,
+            retrievedAtUtc,
+            error);
+    }
+
+    private static WeatherProviderSnapshot CreateFailureWithoutMetrics(
+        WeatherProviderMetadata provider,
+        DateTimeOffset retrievedAtUtc,
+        string error)
+    {
+        var fetchInfo = new ProviderFetchInfo(
             null,
             retrievedAtUtc,
-            rawPayloadJson,
-            0D,
+            QualityScore.Zero);
+
+        return new WeatherProviderSnapshot(
+            provider,
+            false,
+            WeatherMetrics.Empty,
+            fetchInfo,
             error);
     }
 }

@@ -13,11 +13,6 @@ namespace Storage.Providers;
 /// </summary>
 public sealed class WeatherApiProvider : WeatherProviderBase
 {
-    private static readonly ProviderName WeatherApiProviderName =
-        ProviderName.From("WeatherAPI");
-
-    private readonly IOptions<WeatherRefreshOptions> _options;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="WeatherApiProvider"/> class.
     /// </summary>
@@ -40,7 +35,8 @@ public sealed class WeatherApiProvider : WeatherProviderBase
     public override ProviderName ProviderName => WeatherApiProviderName;
 
     /// <inheritdoc />
-    public override int Priority => _options.Value.Providers.WeatherApi.Priority;
+    public override ProviderPriority Priority =>
+        ProviderPriority.From(_options.Value.Providers.WeatherApi.Priority);
 
     /// <inheritdoc />
     public override bool SupportsMarineData => false;
@@ -79,8 +75,7 @@ public sealed class WeatherApiProvider : WeatherProviderBase
         if (!call.IsSuccess)
         {
             return CreateFailureSnapshot(
-                call.Error ?? "WeatherAPI request failed.",
-                call.Payload);
+                call.Error ?? "WeatherAPI request failed.");
         }
 
         var parseSuccess = TryParse(
@@ -93,8 +88,7 @@ public sealed class WeatherApiProvider : WeatherProviderBase
         if (!parseSuccess)
         {
             return CreateFailureSnapshot(
-                "WeatherAPI payload did not contain required metrics.",
-                call.Payload);
+                "WeatherAPI payload did not contain required metrics.");
         }
 
         var qualityScore = 0.35D;
@@ -121,7 +115,6 @@ public sealed class WeatherApiProvider : WeatherProviderBase
             null,
             null,
             observationUtc,
-            call.Payload,
             qualityScore);
     }
 
@@ -168,5 +161,10 @@ public sealed class WeatherApiProvider : WeatherProviderBase
             return false;
         }
     }
+
+    private static readonly ProviderName WeatherApiProviderName =
+        ProviderName.From("WeatherAPI");
+
+    private readonly IOptions<WeatherRefreshOptions> _options;
 }
 

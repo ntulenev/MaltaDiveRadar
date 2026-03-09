@@ -8,10 +8,6 @@ namespace Storage.Repositories;
 /// </summary>
 public sealed class InMemoryDiveSiteCatalog : IDiveSiteCatalog
 {
-    private readonly IReadOnlyList<DiveSite> _allSites;
-    private readonly IReadOnlyList<DiveSite> _activeSites;
-    private readonly IReadOnlyDictionary<int, DiveSite> _siteById;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="InMemoryDiveSiteCatalog"/> class.
     /// </summary>
@@ -38,5 +34,9 @@ public sealed class InMemoryDiveSiteCatalog : IDiveSiteCatalog
 
         return _siteById.GetValueOrDefault(id.Value);
     }
+
+    private readonly IReadOnlyList<DiveSite> _allSites;
+    private readonly IReadOnlyList<DiveSite> _activeSites;
+    private readonly IReadOnlyDictionary<int, DiveSite> _siteById;
 }
 

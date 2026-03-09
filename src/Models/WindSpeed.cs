@@ -5,9 +5,6 @@ namespace Models;
 /// </summary>
 public sealed record WindSpeed
 {
-    private const double STRONG_WIND_THRESHOLD_MPS = 9D;
-    private const double MODERATE_WIND_THRESHOLD_MPS = 5D;
-
     private WindSpeed(double metersPerSecond)
     {
         if (metersPerSecond < 0D)
@@ -56,4 +53,7 @@ public sealed record WindSpeed
     {
         return MetersPerSecond >= MODERATE_WIND_THRESHOLD_MPS;
     }
+
+    private const double STRONG_WIND_THRESHOLD_MPS = 9D;
+    private const double MODERATE_WIND_THRESHOLD_MPS = 5D;
 }

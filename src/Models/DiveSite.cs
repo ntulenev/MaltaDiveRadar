@@ -9,8 +9,8 @@ public sealed class DiveSite
     /// Initializes a new instance of the <see cref="DiveSite"/> class.
     /// </summary>
     /// <param name="id">Internal numeric site ID.</param>
-    /// <param name="name">Display name.</param>
-    /// <param name="island">Island name (Malta, Gozo, or Comino).</param>
+    /// <param name="name">Validated display name.</param>
+    /// <param name="island">Validated island name.</param>
     /// <param name="latitude">Site latitude in decimal degrees.</param>
     /// <param name="longitude">Site longitude in decimal degrees.</param>
     /// <param name="displayX">Map X coordinate in SVG space.</param>
@@ -18,8 +18,8 @@ public sealed class DiveSite
     /// <param name="isActive">Whether the site is currently enabled.</param>
     public DiveSite(
         DiveSiteId id,
-        string name,
-        string island,
+        DiveSiteName name,
+        IslandName island,
         Latitude latitude,
         Longitude longitude,
         double displayX,
@@ -27,8 +27,8 @@ public sealed class DiveSite
         bool isActive = true)
     {
         ArgumentNullException.ThrowIfNull(id);
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentException.ThrowIfNullOrWhiteSpace(island);
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(island);
         ArgumentNullException.ThrowIfNull(latitude);
         ArgumentNullException.ThrowIfNull(longitude);
 
@@ -47,8 +47,8 @@ public sealed class DiveSite
         }
 
         Id = id;
-        Name = name.Trim();
-        Island = island.Trim();
+        Name = name;
+        Island = island;
         Latitude = latitude;
         Longitude = longitude;
         DisplayX = displayX;
@@ -64,12 +64,12 @@ public sealed class DiveSite
     /// <summary>
     /// Gets the display name.
     /// </summary>
-    public string Name { get; }
+    public DiveSiteName Name { get; }
 
     /// <summary>
     /// Gets the island name.
     /// </summary>
-    public string Island { get; }
+    public IslandName Island { get; }
 
     /// <summary>
     /// Gets latitude in decimal degrees.

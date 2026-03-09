@@ -5,6 +5,7 @@ using Abstractions;
 using Microsoft.AspNetCore.Diagnostics;
 
 using Models;
+using Transport;
 
 using Serilog;
 
@@ -80,7 +81,11 @@ internal static class StartupHelpers
             (IWeatherQueryService queryService) =>
             {
                 var sites = queryService.GetSites();
-                return TypedResults.Ok(sites);
+                var response = sites
+                    .Select(ApiDtoMapper.MapDiveSite)
+                    .ToArray();
+
+                return TypedResults.Ok(response);
             });
 
         api.MapGet(
@@ -98,7 +103,7 @@ internal static class StartupHelpers
                     return Results.NotFound(new { error = $"Site '{id}' was not found." });
                 }
 
-                return Results.Ok(site);
+                return Results.Ok(ApiDtoMapper.MapDiveSite(site));
             });
 
         api.MapGet(
@@ -117,7 +122,7 @@ internal static class StartupHelpers
                         new { error = $"Weather snapshot for site '{id}' was not found." });
                 }
 
-                return Results.Ok(weather);
+                return Results.Ok(ApiDtoMapper.MapSnapshot(weather));
             });
 
         api.MapGet(
@@ -125,7 +130,7 @@ internal static class StartupHelpers
             (IWeatherQueryService queryService) =>
             {
                 var latestWeather = queryService.GetLatestWeather();
-                return TypedResults.Ok(latestWeather);
+                return TypedResults.Ok(ApiDtoMapper.MapLatestWeather(latestWeather));
             });
 
         api.MapGet(
@@ -136,7 +141,7 @@ internal static class StartupHelpers
 
                 var providerHealth = latestWeather.Snapshots
                     .SelectMany(static snapshot => snapshot.ProviderSnapshots)
-                    .GroupBy(static provider => provider.ProviderName)
+                    .GroupBy(static provider => provider.ProviderName.Value)
                     .Select(group => new
                     {
                         provider = group.Key,

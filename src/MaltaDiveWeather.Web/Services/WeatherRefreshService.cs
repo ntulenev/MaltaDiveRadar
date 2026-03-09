@@ -2,11 +2,11 @@ using System.Diagnostics.CodeAnalysis;
 
 using Abstractions;
 
+using MaltaDiveWeather.Web.Configuration;
+
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-
-using Storage.Configuration;
 
 namespace MaltaDiveWeather.Web.Services;
 
@@ -19,10 +19,6 @@ namespace MaltaDiveWeather.Web.Services;
     Justification = "Activated by dependency injection as hosted service.")]
 internal sealed partial class WeatherRefreshService : BackgroundService
 {
-    private readonly ILogger<WeatherRefreshService> _logger;
-    private readonly IWeatherRefreshProcessor _weatherRefreshProcessor;
-    private readonly IOptions<WeatherRefreshOptions> _options;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="WeatherRefreshService"/> class.
     /// </summary>
@@ -32,7 +28,7 @@ internal sealed partial class WeatherRefreshService : BackgroundService
     public WeatherRefreshService(
         ILogger<WeatherRefreshService> logger,
         IWeatherRefreshProcessor weatherRefreshProcessor,
-        IOptions<WeatherRefreshOptions> options)
+        IOptions<WeatherRefreshScheduleOptions> options)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(weatherRefreshProcessor);
@@ -102,4 +98,8 @@ internal sealed partial class WeatherRefreshService : BackgroundService
     private static partial void LogUnhandledLoopError(
         ILogger logger,
         Exception exception);
+
+    private readonly ILogger<WeatherRefreshService> _logger;
+    private readonly IWeatherRefreshProcessor _weatherRefreshProcessor;
+    private readonly IOptions<WeatherRefreshScheduleOptions> _options;
 }

@@ -9,12 +9,6 @@ namespace Storage.Providers;
 /// </summary>
 public abstract partial class WeatherProviderBase : IWeatherProvider
 {
-    private const int MAX_RETRY_ATTEMPTS = 3;
-
-    private readonly HttpClient _httpClient;
-    private readonly ILogger _logger;
-    private readonly TimeProvider _timeProvider;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="WeatherProviderBase"/> class.
     /// </summary>
@@ -39,7 +33,7 @@ public abstract partial class WeatherProviderBase : IWeatherProvider
     public abstract ProviderName ProviderName { get; }
 
     /// <inheritdoc />
-    public abstract int Priority { get; }
+    public abstract ProviderPriority Priority { get; }
 
     /// <inheritdoc />
     public abstract bool SupportsMarineData { get; }
@@ -177,19 +171,19 @@ public abstract partial class WeatherProviderBase : IWeatherProvider
     /// Creates a failed provider snapshot.
     /// </summary>
     /// <param name="error">Failure detail.</param>
-    /// <param name="rawPayloadJson">Raw payload.</param>
     /// <returns>Failure snapshot.</returns>
     protected WeatherProviderSnapshot CreateFailureSnapshot(
-        string error,
-        string rawPayloadJson = "")
+        string error)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(error);
-        return WeatherProviderSnapshot.CreateFailure(
-            ProviderName.Value,
+        var provider = new WeatherProviderMetadata(
+            ProviderName,
             Priority,
-            SupportsMarineData,
+            SupportsMarineData);
+
+        return WeatherProviderSnapshot.CreateFailure(
+            provider,
             _timeProvider.GetUtcNow(),
-            rawPayloadJson,
             error);
     }
 
@@ -203,7 +197,6 @@ public abstract partial class WeatherProviderBase : IWeatherProvider
     /// <param name="waveHeightM">Wave height in meters.</param>
     /// <param name="seaStateText">Sea state text.</param>
     /// <param name="observationTimeUtc">Observation timestamp in UTC.</param>
-    /// <param name="rawPayloadJson">Raw payload JSON.</param>
     /// <param name="qualityScore">Provider quality score.</param>
     /// <returns>Success snapshot.</returns>
     protected WeatherProviderSnapshot CreateSuccessSnapshot(
@@ -214,63 +207,88 @@ public abstract partial class WeatherProviderBase : IWeatherProvider
         double? waveHeightM,
         string? seaStateText,
         DateTimeOffset? observationTimeUtc,
-        string rawPayloadJson,
         double qualityScore)
     {
-        ArgumentNullException.ThrowIfNull(rawPayloadJson);
-        return WeatherProviderSnapshot.CreateSuccess(
-            ProviderName.Value,
+        var provider = new WeatherProviderMetadata(
+            ProviderName,
             Priority,
-            SupportsMarineData,
-            airTemperatureC,
-            waterTemperatureC,
-            windSpeedMps,
-            windDirectionDeg,
-            waveHeightM,
-            seaStateText,
+            SupportsMarineData);
+        var metrics = new WeatherMetrics(
+            ToAirTemperature(airTemperatureC),
+            ToWaterTemperature(waterTemperatureC),
+            ToWindSpeed(windSpeedMps),
+            ToWindDirection(windDirectionDeg),
+            ToWaveHeight(waveHeightM),
+            ToSeaStateText(seaStateText));
+        var fetchInfo = new ProviderFetchInfo(
             observationTimeUtc,
             _timeProvider.GetUtcNow(),
-            rawPayloadJson,
-            Math.Clamp(qualityScore, 0D, 1D));
+            QualityScore.FromClamped(qualityScore));
+
+        return WeatherProviderSnapshot.CreateSuccess(
+            provider,
+            metrics,
+            fetchInfo);
     }
 
-    /// <summary>
-    /// Builds a composite raw-payload JSON object from multiple provider calls.
-    /// </summary>
-    /// <param name="entries">Named payload entries.</param>
-    /// <returns>Composite JSON payload.</returns>
-    protected static string BuildCompositePayload(
-        IReadOnlyDictionary<string, string> entries)
+    private static AirTemperature? ToAirTemperature(double? airTemperatureC)
     {
-        ArgumentNullException.ThrowIfNull(entries);
-
-        if (entries.Count == 0)
+        if (airTemperatureC is null)
         {
-            return "{}";
+            return null;
         }
 
-        var segments = entries
-            .Where(static pair => !string.IsNullOrWhiteSpace(pair.Key))
-            .Select(pair =>
-                $"\"{pair.Key}\":{NormalizeJsonOrNull(pair.Value)}");
-
-        return $"{{{string.Join(",", segments)}}}";
+        return AirTemperature.FromCelsius(airTemperatureC.Value);
     }
 
-    private static string NormalizeJsonOrNull(string payload)
+    private static WaterTemperature? ToWaterTemperature(double? waterTemperatureC)
     {
-        if (string.IsNullOrWhiteSpace(payload))
+        if (waterTemperatureC is null)
         {
-            return "null";
+            return null;
         }
 
-        var trimmed = payload.Trim();
-        if (trimmed.StartsWith('{') || trimmed.StartsWith('['))
+        return WaterTemperature.FromCelsius(waterTemperatureC.Value);
+    }
+
+    private static WindSpeed? ToWindSpeed(double? windSpeedMps)
+    {
+        if (windSpeedMps is null)
         {
-            return trimmed;
+            return null;
         }
 
-        return "null";
+        return WindSpeed.FromMetersPerSecond(windSpeedMps.Value);
+    }
+
+    private static WindDirection? ToWindDirection(int? windDirectionDeg)
+    {
+        if (windDirectionDeg is null)
+        {
+            return null;
+        }
+
+        return WindDirection.FromDegrees(windDirectionDeg.Value);
+    }
+
+    private static WaveHeight? ToWaveHeight(double? waveHeightM)
+    {
+        if (waveHeightM is null)
+        {
+            return null;
+        }
+
+        return WaveHeight.FromMeters(waveHeightM.Value);
+    }
+
+    private static SeaStateText? ToSeaStateText(string? seaStateText)
+    {
+        if (string.IsNullOrWhiteSpace(seaStateText))
+        {
+            return null;
+        }
+
+        return SeaStateText.From(seaStateText);
     }
 
     [LoggerMessage(
@@ -330,5 +348,11 @@ public abstract partial class WeatherProviderBase : IWeatherProvider
         bool IsSuccess,
         string Payload,
         string? Error);
+
+    private const int MAX_RETRY_ATTEMPTS = 3;
+
+    private readonly HttpClient _httpClient;
+    private readonly ILogger _logger;
+    private readonly TimeProvider _timeProvider;
 }
 

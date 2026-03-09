@@ -13,11 +13,6 @@ namespace Storage.Providers;
 /// </summary>
 public sealed class OpenWeatherProvider : WeatherProviderBase
 {
-    private static readonly ProviderName OpenWeatherProviderName =
-        ProviderName.From("OpenWeather");
-
-    private readonly IOptions<WeatherRefreshOptions> _options;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenWeatherProvider"/> class.
     /// </summary>
@@ -40,7 +35,8 @@ public sealed class OpenWeatherProvider : WeatherProviderBase
     public override ProviderName ProviderName => OpenWeatherProviderName;
 
     /// <inheritdoc />
-    public override int Priority => _options.Value.Providers.OpenWeather.Priority;
+    public override ProviderPriority Priority =>
+        ProviderPriority.From(_options.Value.Providers.OpenWeather.Priority);
 
     /// <inheritdoc />
     public override bool SupportsMarineData => false;
@@ -80,8 +76,7 @@ public sealed class OpenWeatherProvider : WeatherProviderBase
         if (!call.IsSuccess)
         {
             return CreateFailureSnapshot(
-                call.Error ?? "OpenWeather request failed.",
-                call.Payload);
+                call.Error ?? "OpenWeather request failed.");
         }
 
         var parseSuccess = TryParse(
@@ -94,8 +89,7 @@ public sealed class OpenWeatherProvider : WeatherProviderBase
         if (!parseSuccess)
         {
             return CreateFailureSnapshot(
-                "OpenWeather payload did not contain required metrics.",
-                call.Payload);
+                "OpenWeather payload did not contain required metrics.");
         }
 
         var qualityScore = 0.30D;
@@ -122,7 +116,6 @@ public sealed class OpenWeatherProvider : WeatherProviderBase
             null,
             null,
             observationUtc,
-            call.Payload,
             qualityScore);
     }
 
@@ -167,5 +160,10 @@ public sealed class OpenWeatherProvider : WeatherProviderBase
             return false;
         }
     }
+
+    private static readonly ProviderName OpenWeatherProviderName =
+        ProviderName.From("OpenWeather");
+
+    private readonly IOptions<WeatherRefreshOptions> _options;
 }
 

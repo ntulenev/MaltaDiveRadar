@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Abstractions;
 using Models;
 
@@ -9,11 +8,6 @@ namespace Storage.Providers;
 /// </summary>
 public sealed class DemoWeatherProvider : IWeatherProvider
 {
-    private static readonly ProviderName DemoProviderName =
-        ProviderName.From("Demo-Simulator");
-
-    private readonly TimeProvider _timeProvider;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="DemoWeatherProvider"/> class.
     /// </summary>
@@ -28,7 +22,7 @@ public sealed class DemoWeatherProvider : IWeatherProvider
     public ProviderName ProviderName => DemoProviderName;
 
     /// <inheritdoc />
-    public int Priority => 1;
+    public ProviderPriority Priority => DemoPriority;
 
     /// <inheritdoc />
     public bool SupportsMarineData => true;
@@ -74,43 +68,37 @@ public sealed class DemoWeatherProvider : IWeatherProvider
         var airTemperature = 16D + ((seed % 160) / 10D);
         var waterTemperature = 14D + ((seed % 120) / 10D);
         var windDirection = seed % 360;
+        var airTemperatureValue = AirTemperature.FromCelsius(
+            Math.Round(airTemperature, 1));
+        var waterTemperatureValue = WaterTemperature.FromCelsius(
+            Math.Round(waterTemperature, 1));
+        var windSpeedValue = WindSpeed.FromMetersPerSecond(
+            Math.Round(windSpeed, 1));
+        var windDirectionValue = WindDirection.FromDegrees(windDirection);
+        var waveHeightValue = WaveHeight.FromMeters(
+            Math.Round(waveHeight, 2));
 
-        var payload = JsonSerializer.Serialize(
-            new
-            {
-                mode = "demo",
-                coordinates = new
-                {
-                    latitude = latitude.Degrees,
-                    longitude = longitude.Degrees,
-                },
-                generatedAtUtc = nowUtc,
-                observationTimeUtc = hourStart,
-                metrics = new
-                {
-                    airTemperatureC = airTemperature,
-                    waterTemperatureC = waterTemperature,
-                    windSpeedMps = windSpeed,
-                    windDirectionDeg = windDirection,
-                    waveHeightM = waveHeight,
-                },
-            });
+        var provider = new WeatherProviderMetadata(
+            ProviderName,
+            Priority,
+            SupportsMarineData);
+        var metrics = new WeatherMetrics(
+            airTemperatureValue,
+            waterTemperatureValue,
+            windSpeedValue,
+            windDirectionValue,
+            waveHeightValue,
+            SeaStateText.From(DescribeSeaState(waveHeightValue)));
+        var fetchInfo = new ProviderFetchInfo(
+            hourStart,
+            nowUtc,
+            QualityScore.From(0.98D));
 
         return Task.FromResult(
             WeatherProviderSnapshot.CreateSuccess(
-                ProviderName.Value,
-                Priority,
-                SupportsMarineData,
-                Math.Round(airTemperature, 1),
-                Math.Round(waterTemperature, 1),
-                Math.Round(windSpeed, 1),
-                windDirection,
-                Math.Round(waveHeight, 2),
-                DescribeSeaState(waveHeight),
-                hourStart,
-                nowUtc,
-                payload,
-                0.98D));
+                provider,
+                metrics,
+                fetchInfo));
     }
 
     private static int BuildSeed(
@@ -126,14 +114,22 @@ public sealed class DemoWeatherProvider : IWeatherProvider
         return (latComponent * 31 + lonComponent * 17 + (hour * 13)) & 0x7FFFFFFF;
     }
 
-    private static string DescribeSeaState(double waveHeightM)
+    private static string DescribeSeaState(WaveHeight waveHeight)
     {
-        return waveHeightM switch
+        ArgumentNullException.ThrowIfNull(waveHeight);
+
+        return waveHeight.Meters switch
         {
             < 0.5D => "Calm sea, light wind",
             <= 1.2D => "Moderate chop, caution advised",
             _ => "Rough sea conditions",
         };
     }
+
+    private static readonly ProviderName DemoProviderName =
+        ProviderName.From("Demo-Simulator");
+    private static readonly ProviderPriority DemoPriority = ProviderPriority.From(1);
+
+    private readonly TimeProvider _timeProvider;
 }
 

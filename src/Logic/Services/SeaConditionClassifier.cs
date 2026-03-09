@@ -13,32 +13,24 @@ public sealed class SeaConditionClassifier : ISeaConditionClassifier
         WaveHeight? waveHeight,
         WindSpeed? windSpeed)
     {
-        if (waveHeight is null && windSpeed is null)
+        return (waveHeight, windSpeed) switch
         {
-            return new SeaConditionEvaluation(
-                SeaConditionStatus.Unknown,
-                "Insufficient marine data");
-        }
+            (null, null) => SeaConditionEvaluation.CreateUnknown(),
 
-        if (waveHeight?.IsHighWaves() == true ||
-            windSpeed?.IsStrongWind() == true)
-        {
-            return new SeaConditionEvaluation(
-                SeaConditionStatus.Rough,
-                "Rough sea conditions");
-        }
+            ({ } wave, _) when wave.IsHighWaves() =>
+                SeaConditionEvaluation.CreateRough(),
 
-        if (waveHeight?.IsModerateWaves() == true ||
-            windSpeed?.IsModerateWind() == true)
-        {
-            return new SeaConditionEvaluation(
-                SeaConditionStatus.Caution,
-                "Moderate chop, caution advised");
-        }
+            (_, { } wind) when wind.IsStrongWind() =>
+                SeaConditionEvaluation.CreateRough(),
 
-        return new SeaConditionEvaluation(
-            SeaConditionStatus.Good,
-            "Calm sea, light wind");
+            ({ } wave, _) when wave.IsModerateWaves() =>
+                SeaConditionEvaluation.CreateCaution(),
+
+            (_, { } wind) when wind.IsModerateWind() =>
+                SeaConditionEvaluation.CreateCaution(),
+
+            _ => SeaConditionEvaluation.CreateGood(),
+        };
     }
 }
 

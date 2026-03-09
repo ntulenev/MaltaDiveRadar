@@ -12,11 +12,6 @@ namespace Storage.Providers;
 /// </summary>
 public sealed class OpenMeteoProvider : WeatherProviderBase
 {
-    private static readonly ProviderName OpenMeteoProviderName =
-        ProviderName.From("Open-Meteo");
-
-    private readonly IOptions<WeatherRefreshOptions> _options;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="OpenMeteoProvider"/> class.
     /// </summary>
@@ -39,7 +34,8 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
     public override ProviderName ProviderName => OpenMeteoProviderName;
 
     /// <inheritdoc />
-    public override int Priority => _options.Value.Providers.OpenMeteo.Priority;
+    public override ProviderPriority Priority =>
+        ProviderPriority.From(_options.Value.Providers.OpenMeteo.Priority);
 
     /// <inheritdoc />
     public override bool SupportsMarineData => true;
@@ -80,19 +76,11 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
             new Uri(marineUri, UriKind.Absolute),
             cancellationToken).ConfigureAwait(false);
 
-        var rawPayload = BuildCompositePayload(
-            new Dictionary<string, string>(StringComparer.Ordinal)
-            {
-                ["forecast"] = forecastCall.Payload,
-                ["marine"] = marineCall.Payload,
-            });
-
         if (!forecastCall.IsSuccess && !marineCall.IsSuccess)
         {
             return CreateFailureSnapshot(
                 $"Forecast failed: {forecastCall.Error}; " +
-                $"Marine failed: {marineCall.Error}",
-                rawPayload);
+                $"Marine failed: {marineCall.Error}");
         }
 
         _ = TryParseForecast(
@@ -115,8 +103,7 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
             waveHeight is null)
         {
             return CreateFailureSnapshot(
-                "Open-Meteo returned payloads without usable metrics.",
-                rawPayload);
+                "Open-Meteo returned payloads without usable metrics.");
         }
 
         var observationTimeUtc = MaxTime(
@@ -138,7 +125,6 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
             waveHeight,
             DescribeSeaState(waveHeight),
             observationTimeUtc,
-            rawPayload,
             qualityScore);
     }
 
@@ -331,5 +317,10 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
             _ => "Very rough sea",
         };
     }
+
+    private static readonly ProviderName OpenMeteoProviderName =
+        ProviderName.From("Open-Meteo");
+
+    private readonly IOptions<WeatherRefreshOptions> _options;
 }
 

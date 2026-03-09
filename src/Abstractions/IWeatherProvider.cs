@@ -15,7 +15,7 @@ public interface IWeatherProvider
     /// <summary>
     /// Gets provider priority where lower value means higher precedence.
     /// </summary>
-    int Priority { get; }
+    ProviderPriority Priority { get; }
 
     /// <summary>
     /// Gets a value indicating whether this provider supports marine metrics.
