@@ -11,6 +11,16 @@ import {
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
+const MAP_VIEWBOX_WIDTH = 1000;
+const MAP_VIEWBOX_HEIGHT = 620;
+const MARKER_LABEL_OFFSET_X = 11;
+const MARKER_LABEL_OFFSET_Y = -10;
+const MAP_EDGE_PADDING = 10;
+const LABEL_MAX_VISIBLE_LENGTH = 24;
+const MAP_PAN_MARGIN_X = 140;
+const MAP_PAN_MARGIN_Y = 90;
+const MAP_DRAG_THRESHOLD_PX = 4;
+const P31_WRECK_SITE_NAME = "P31 Wreck";
 
 const state = {
     sites: [],
@@ -19,7 +29,21 @@ const state = {
     lastRefreshUtc: null,
 };
 
+const mapState = {
+    pointerId: null,
+    dragStartClientX: 0,
+    dragStartClientY: 0,
+    dragStartViewBoxX: 0,
+    dragStartViewBoxY: 0,
+    dragDistancePx: 0,
+    viewBoxX: 0,
+    viewBoxY: 0,
+    pressedSiteId: null,
+    suppressNextMarkerClick: false,
+};
+
 const elements = {
+    radarMap: document.getElementById("radarMap"),
     markerLayer: document.getElementById("markerLayer"),
     lastRefresh: document.getElementById("lastRefresh"),
     siteName: document.getElementById("siteName"),
@@ -39,6 +63,7 @@ const elements = {
 };
 
 window.addEventListener("DOMContentLoaded", () => {
+    initializeMapInteractions();
     void initializeAsync();
 });
 
@@ -122,8 +147,15 @@ function renderMarkers() {
         marker.setAttribute("role", "button");
         marker.setAttribute("tabindex", "0");
         marker.setAttribute("aria-label", `Select ${site.name}`);
+        marker.dataset.siteId = String(site.id);
 
-        marker.addEventListener("click", () => selectSite(site.id));
+        marker.addEventListener("click", () => {
+            if (consumeSuppressedMarkerClick()) {
+                return;
+            }
+
+            selectSite(site.id);
+        });
         marker.addEventListener("keydown", (event) => {
             if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
@@ -143,12 +175,27 @@ function renderMarkers() {
         marker.appendChild(dot);
 
         const label = document.createElementNS(SVG_NS, "text");
-        label.setAttribute("x", "11");
-        label.setAttribute("y", "-10");
-        label.textContent = shortLabel(site.name);
+        const labelText = shortLabel(site.name);
+        const customLabelPosition = getCustomMarkerLabelPosition(site);
+
+        if (customLabelPosition) {
+            label.setAttribute("x", String(customLabelPosition.x));
+            label.setAttribute("y", String(customLabelPosition.y));
+            label.setAttribute("text-anchor", customLabelPosition.anchor);
+        } else {
+            label.setAttribute("x", String(MARKER_LABEL_OFFSET_X));
+            label.setAttribute("y", String(MARKER_LABEL_OFFSET_Y));
+            label.setAttribute("text-anchor", "start");
+        }
+
+        label.textContent = labelText;
         marker.appendChild(label);
 
         elements.markerLayer.appendChild(marker);
+
+        if (!customLabelPosition) {
+            positionMarkerLabel(site, label);
+        }
     }
 }
 
@@ -255,11 +302,190 @@ function createLine(x1, y1, x2, y2) {
 }
 
 function shortLabel(value) {
-    if (value.length <= 14) {
+    if (value.length <= LABEL_MAX_VISIBLE_LENGTH) {
         return value;
     }
 
-    return `${value.slice(0, 12)}...`;
+    return `${value.slice(0, LABEL_MAX_VISIBLE_LENGTH - 3)}...`;
+}
+
+function getCustomMarkerLabelPosition(site) {
+    if (site.name === P31_WRECK_SITE_NAME) {
+        return {
+            x: -MARKER_LABEL_OFFSET_X,
+            y: 16,
+            anchor: "end",
+        };
+    }
+
+    return null;
+}
+
+function positionMarkerLabel(site, label) {
+    const labelWidth = label.getComputedTextLength();
+    const minVisibleX = MAP_EDGE_PADDING;
+    const maxVisibleX = MAP_VIEWBOX_WIDTH - MAP_EDGE_PADDING;
+
+    const rightStart = site.displayX + MARKER_LABEL_OFFSET_X;
+    const rightEnd = rightStart + labelWidth;
+    const leftEnd = site.displayX - MARKER_LABEL_OFFSET_X;
+    const leftStart = leftEnd - labelWidth;
+
+    const rightOverflow = Math.max(0, rightEnd - maxVisibleX);
+    const leftOverflow = Math.max(0, minVisibleX - leftStart);
+
+    if (rightOverflow <= leftOverflow) {
+        label.setAttribute("x", String(MARKER_LABEL_OFFSET_X));
+        label.setAttribute("text-anchor", "start");
+        return;
+    }
+
+    label.setAttribute("x", String(-MARKER_LABEL_OFFSET_X));
+    label.setAttribute("text-anchor", "end");
+}
+
+function initializeMapInteractions() {
+    if (!elements.radarMap) {
+        return;
+    }
+
+    mapState.viewBoxX = 0;
+    mapState.viewBoxY = 0;
+
+    elements.radarMap.addEventListener("pointerdown", handleMapPointerDown);
+    elements.radarMap.addEventListener("pointermove", handleMapPointerMove);
+    elements.radarMap.addEventListener("pointerup", handleMapPointerUp);
+    elements.radarMap.addEventListener("pointercancel", handleMapPointerUp);
+    elements.radarMap.addEventListener("lostpointercapture", handleMapPointerUp);
+    elements.radarMap.addEventListener("dblclick", () => {
+        resetMapViewBox();
+    });
+}
+
+function handleMapPointerDown(event) {
+    if (!elements.radarMap || event.button !== 0) {
+        return;
+    }
+
+    mapState.pointerId = event.pointerId;
+    mapState.dragStartClientX = event.clientX;
+    mapState.dragStartClientY = event.clientY;
+    mapState.dragStartViewBoxX = mapState.viewBoxX;
+    mapState.dragStartViewBoxY = mapState.viewBoxY;
+    mapState.dragDistancePx = 0;
+    mapState.pressedSiteId = getSiteIdFromEventTarget(event.target);
+
+    elements.radarMap.setPointerCapture(event.pointerId);
+    elements.radarMap.classList.add("is-dragging");
+}
+
+function handleMapPointerMove(event) {
+    if (!elements.radarMap || mapState.pointerId !== event.pointerId) {
+        return;
+    }
+
+    const deltaX = event.clientX - mapState.dragStartClientX;
+    const deltaY = event.clientY - mapState.dragStartClientY;
+
+    mapState.dragDistancePx = Math.max(
+        mapState.dragDistancePx,
+        Math.hypot(deltaX, deltaY),
+    );
+
+    if (mapState.dragDistancePx < MAP_DRAG_THRESHOLD_PX) {
+        return;
+    }
+
+    const pixelsToViewBoxX = MAP_VIEWBOX_WIDTH / elements.radarMap.clientWidth;
+    const pixelsToViewBoxY = MAP_VIEWBOX_HEIGHT / elements.radarMap.clientHeight;
+
+    const nextX = clamp(
+        mapState.dragStartViewBoxX - (deltaX * pixelsToViewBoxX),
+        -MAP_PAN_MARGIN_X,
+        MAP_PAN_MARGIN_X,
+    );
+
+    const nextY = clamp(
+        mapState.dragStartViewBoxY - (deltaY * pixelsToViewBoxY),
+        -MAP_PAN_MARGIN_Y,
+        MAP_PAN_MARGIN_Y,
+    );
+
+    setMapViewBox(nextX, nextY);
+}
+
+function handleMapPointerUp(event) {
+    if (!elements.radarMap || mapState.pointerId !== event.pointerId) {
+        return;
+    }
+
+    const wasDrag = mapState.dragDistancePx >= MAP_DRAG_THRESHOLD_PX;
+
+    if (wasDrag) {
+        mapState.suppressNextMarkerClick = true;
+    } else if (mapState.pressedSiteId !== null) {
+        selectSite(mapState.pressedSiteId);
+        mapState.suppressNextMarkerClick = true;
+    }
+
+    if (elements.radarMap.hasPointerCapture(event.pointerId)) {
+        elements.radarMap.releasePointerCapture(event.pointerId);
+    }
+
+    mapState.pointerId = null;
+    mapState.dragDistancePx = 0;
+    mapState.pressedSiteId = null;
+    elements.radarMap.classList.remove("is-dragging");
+}
+
+function resetMapViewBox() {
+    setMapViewBox(0, 0);
+}
+
+function setMapViewBox(x, y) {
+    if (!elements.radarMap) {
+        return;
+    }
+
+    mapState.viewBoxX = x;
+    mapState.viewBoxY = y;
+
+    elements.radarMap.setAttribute(
+        "viewBox",
+        `${x} ${y} ${MAP_VIEWBOX_WIDTH} ${MAP_VIEWBOX_HEIGHT}`,
+    );
+}
+
+function consumeSuppressedMarkerClick() {
+    if (!mapState.suppressNextMarkerClick) {
+        return false;
+    }
+
+    mapState.suppressNextMarkerClick = false;
+    return true;
+}
+
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
+
+function getSiteIdFromEventTarget(target) {
+    if (!(target instanceof Element)) {
+        return null;
+    }
+
+    const marker = target.closest("g.marker");
+    if (!marker) {
+        return null;
+    }
+
+    const siteIdRaw = marker.getAttribute("data-site-id");
+    if (!siteIdRaw) {
+        return null;
+    }
+
+    const siteId = Number(siteIdRaw);
+    return Number.isInteger(siteId) ? siteId : null;
 }
 
 function formatWindDirection(snapshot) {

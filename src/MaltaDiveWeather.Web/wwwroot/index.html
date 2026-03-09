@@ -32,6 +32,37 @@
                 role="img"
                 aria-label="Stylized map of Malta, Gozo, and Comino with dive markers"
             >
+                <defs>
+                    <pattern
+                        id="radarGridExtended"
+                        width="32"
+                        height="32"
+                        patternUnits="userSpaceOnUse"
+                    >
+                        <path
+                            d="M32 0H0V32"
+                            fill="none"
+                            stroke="rgba(96, 150, 137, 0.12)"
+                            stroke-width="1"
+                        />
+                    </pattern>
+                </defs>
+
+                <rect
+                    x="-220"
+                    y="-140"
+                    width="1440"
+                    height="900"
+                    fill="#071310"
+                ></rect>
+                <rect
+                    x="-220"
+                    y="-140"
+                    width="1440"
+                    height="900"
+                    fill="url(#radarGridExtended)"
+                ></rect>
+
                 <image
                     href="/assets/malta-gozo-map.svg"
                     x="0"

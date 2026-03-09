@@ -125,6 +125,12 @@ body {
     border: 1px solid rgba(75, 106, 98, 0.5);
     background: radial-gradient(circle at 50% 20%, #0a1815, #06100e);
     aspect-ratio: 1000 / 620;
+    cursor: grab;
+    touch-action: none;
+}
+
+#radarMap.is-dragging {
+    cursor: grabbing;
 }
 
 .legend {
