@@ -7,19 +7,26 @@ import {
     formatWaveHeight,
     formatWindSpeed,
     markerClass,
-} from "./shared.js";
+} from "./shared.js?v=20260309.1";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
 const MAP_VIEWBOX_WIDTH = 1000;
 const MAP_VIEWBOX_HEIGHT = 620;
+const MAP_MIN_X = -220;
+const MAP_MIN_Y = -140;
+const MAP_EXTENT_WIDTH = 1440;
+const MAP_EXTENT_HEIGHT = 900;
 const MARKER_LABEL_OFFSET_X = 11;
 const MARKER_LABEL_OFFSET_Y = -10;
 const MAP_EDGE_PADDING = 10;
 const LABEL_MAX_VISIBLE_LENGTH = 24;
-const MAP_PAN_MARGIN_X = 140;
-const MAP_PAN_MARGIN_Y = 90;
 const MAP_DRAG_THRESHOLD_PX = 4;
+const MAP_MIN_ZOOM = 1;
+const MAP_MAX_ZOOM = 3.2;
+const MAP_ZOOM_STEP = 1.2;
+const MAP_WHEEL_ZOOM_SENSITIVITY = 0.0018;
+const MAP_DOUBLE_TAP_WINDOW_MS = 280;
 const P31_WRECK_SITE_NAME = "P31 Wreck";
 
 const state = {
@@ -38,13 +45,26 @@ const mapState = {
     dragDistancePx: 0,
     viewBoxX: 0,
     viewBoxY: 0,
+    viewBoxWidth: MAP_VIEWBOX_WIDTH,
+    viewBoxHeight: MAP_VIEWBOX_HEIGHT,
+    zoom: MAP_MIN_ZOOM,
     pressedSiteId: null,
     suppressNextMarkerClick: false,
+    activePointers: new Map(),
+    isPinching: false,
+    pinchStartDistance: 0,
+    pinchStartAnchorX: 0,
+    pinchStartAnchorY: 0,
+    pinchStartZoom: MAP_MIN_ZOOM,
+    lastTouchTapAtMs: 0,
 };
 
 const elements = {
     radarMap: document.getElementById("radarMap"),
     markerLayer: document.getElementById("markerLayer"),
+    zoomInButton: document.getElementById("zoomInButton"),
+    zoomOutButton: document.getElementById("zoomOutButton"),
+    resetViewButton: document.getElementById("resetViewButton"),
     lastRefresh: document.getElementById("lastRefresh"),
     siteName: document.getElementById("siteName"),
     siteMeta: document.getElementById("siteMeta"),
@@ -166,6 +186,11 @@ function renderMarkers() {
         const title = document.createElementNS(SVG_NS, "title");
         title.textContent = `${site.name} - ${snapshot?.conditionStatus ?? "No Data"}`;
         marker.appendChild(title);
+
+        const hitArea = document.createElementNS(SVG_NS, "circle");
+        hitArea.classList.add("marker-hit-area");
+        hitArea.setAttribute("r", "18");
+        marker.appendChild(hitArea);
 
         marker.appendChild(createLine(-12, 0, 12, 0));
         marker.appendChild(createLine(0, -12, 0, 12));
@@ -349,17 +374,70 @@ function initializeMapInteractions() {
         return;
     }
 
-    mapState.viewBoxX = 0;
-    mapState.viewBoxY = 0;
+    resetMapViewBox();
 
     elements.radarMap.addEventListener("pointerdown", handleMapPointerDown);
     elements.radarMap.addEventListener("pointermove", handleMapPointerMove);
     elements.radarMap.addEventListener("pointerup", handleMapPointerUp);
     elements.radarMap.addEventListener("pointercancel", handleMapPointerUp);
     elements.radarMap.addEventListener("lostpointercapture", handleMapPointerUp);
+    elements.radarMap.addEventListener("wheel", handleMapWheel, { passive: false });
     elements.radarMap.addEventListener("dblclick", () => {
         resetMapViewBox();
     });
+
+    elements.zoomInButton?.addEventListener("click", () => {
+        zoomByFactor(MAP_ZOOM_STEP);
+    });
+
+    elements.zoomOutButton?.addEventListener("click", () => {
+        zoomByFactor(1 / MAP_ZOOM_STEP);
+    });
+
+    elements.resetViewButton?.addEventListener("click", () => {
+        resetMapViewBox();
+    });
+}
+
+function handleMapWheel(event) {
+    if (!elements.radarMap) {
+        return;
+    }
+
+    event.preventDefault();
+
+    const zoomFactor = Math.exp(-event.deltaY * MAP_WHEEL_ZOOM_SENSITIVITY);
+    const nextZoom = mapState.zoom * zoomFactor;
+    zoomTo(nextZoom, event.clientX, event.clientY);
+}
+
+function zoomByFactor(factor) {
+    if (!elements.radarMap) {
+        return;
+    }
+
+    const rect = elements.radarMap.getBoundingClientRect();
+    const clientX = rect.left + (rect.width / 2);
+    const clientY = rect.top + (rect.height / 2);
+    zoomTo(mapState.zoom * factor, clientX, clientY);
+}
+
+function zoomTo(zoomLevel, clientX, clientY) {
+    if (!elements.radarMap) {
+        return;
+    }
+
+    const nextZoom = clamp(zoomLevel, MAP_MIN_ZOOM, MAP_MAX_ZOOM);
+    const nextWidth = MAP_VIEWBOX_WIDTH / nextZoom;
+    const nextHeight = MAP_VIEWBOX_HEIGHT / nextZoom;
+    const pointerPosition = clientToViewBox(clientX, clientY);
+    const rect = elements.radarMap.getBoundingClientRect();
+    const fx = clamp((clientX - rect.left) / rect.width, 0, 1);
+    const fy = clamp((clientY - rect.top) / rect.height, 0, 1);
+    const nextX = pointerPosition.x - (fx * nextWidth);
+    const nextY = pointerPosition.y - (fy * nextHeight);
+
+    setMapViewBox(nextX, nextY, nextWidth, nextHeight);
 }
 
 function handleMapPointerDown(event) {
@@ -367,20 +445,43 @@ function handleMapPointerDown(event) {
         return;
     }
 
-    mapState.pointerId = event.pointerId;
-    mapState.dragStartClientX = event.clientX;
-    mapState.dragStartClientY = event.clientY;
-    mapState.dragStartViewBoxX = mapState.viewBoxX;
-    mapState.dragStartViewBoxY = mapState.viewBoxY;
-    mapState.dragDistancePx = 0;
-    mapState.pressedSiteId = getSiteIdFromEventTarget(event.target);
+    mapState.activePointers.set(event.pointerId, {
+        clientX: event.clientX,
+        clientY: event.clientY,
+    });
+
+    if (mapState.activePointers.size === 1) {
+        mapState.pointerId = event.pointerId;
+        mapState.dragStartClientX = event.clientX;
+        mapState.dragStartClientY = event.clientY;
+        mapState.dragStartViewBoxX = mapState.viewBoxX;
+        mapState.dragStartViewBoxY = mapState.viewBoxY;
+        mapState.dragDistancePx = 0;
+        mapState.pressedSiteId = getSiteIdFromEventTarget(event.target);
+    } else if (mapState.activePointers.size === 2) {
+        beginPinchGesture();
+    }
 
     elements.radarMap.setPointerCapture(event.pointerId);
     elements.radarMap.classList.add("is-dragging");
 }
 
 function handleMapPointerMove(event) {
-    if (!elements.radarMap || mapState.pointerId !== event.pointerId) {
+    if (!elements.radarMap || !mapState.activePointers.has(event.pointerId)) {
+        return;
+    }
+
+    mapState.activePointers.set(event.pointerId, {
+        clientX: event.clientX,
+        clientY: event.clientY,
+    });
+
+    if (mapState.isPinching && mapState.activePointers.size >= 2) {
+        updatePinchGesture();
+        return;
+    }
+
+    if (mapState.pointerId !== event.pointerId || mapState.activePointers.size !== 1) {
         return;
     }
 
@@ -396,63 +497,104 @@ function handleMapPointerMove(event) {
         return;
     }
 
-    const pixelsToViewBoxX = MAP_VIEWBOX_WIDTH / elements.radarMap.clientWidth;
-    const pixelsToViewBoxY = MAP_VIEWBOX_HEIGHT / elements.radarMap.clientHeight;
+    const rect = elements.radarMap.getBoundingClientRect();
+    const pixelsToViewBoxX = mapState.viewBoxWidth / rect.width;
+    const pixelsToViewBoxY = mapState.viewBoxHeight / rect.height;
+    const nextX = mapState.dragStartViewBoxX - (deltaX * pixelsToViewBoxX);
+    const nextY = mapState.dragStartViewBoxY - (deltaY * pixelsToViewBoxY);
 
-    const nextX = clamp(
-        mapState.dragStartViewBoxX - (deltaX * pixelsToViewBoxX),
-        -MAP_PAN_MARGIN_X,
-        MAP_PAN_MARGIN_X,
-    );
-
-    const nextY = clamp(
-        mapState.dragStartViewBoxY - (deltaY * pixelsToViewBoxY),
-        -MAP_PAN_MARGIN_Y,
-        MAP_PAN_MARGIN_Y,
-    );
-
-    setMapViewBox(nextX, nextY);
+    setMapViewBox(nextX, nextY, mapState.viewBoxWidth, mapState.viewBoxHeight);
 }
 
 function handleMapPointerUp(event) {
-    if (!elements.radarMap || mapState.pointerId !== event.pointerId) {
+    if (!elements.radarMap) {
         return;
     }
 
-    const wasDrag = mapState.dragDistancePx >= MAP_DRAG_THRESHOLD_PX;
+    const pointerWasTracked = mapState.activePointers.delete(event.pointerId);
 
-    if (wasDrag) {
-        mapState.suppressNextMarkerClick = true;
-    } else if (mapState.pressedSiteId !== null) {
-        selectSite(mapState.pressedSiteId);
-        mapState.suppressNextMarkerClick = true;
+    if (!pointerWasTracked) {
+        if (elements.radarMap.hasPointerCapture(event.pointerId)) {
+            elements.radarMap.releasePointerCapture(event.pointerId);
+        }
+
+        return;
     }
 
     if (elements.radarMap.hasPointerCapture(event.pointerId)) {
         elements.radarMap.releasePointerCapture(event.pointerId);
     }
 
-    mapState.pointerId = null;
-    mapState.dragDistancePx = 0;
-    mapState.pressedSiteId = null;
-    elements.radarMap.classList.remove("is-dragging");
+    if (mapState.isPinching) {
+        mapState.suppressNextMarkerClick = true;
+
+        if (mapState.activePointers.size < 2) {
+            mapState.isPinching = false;
+            resetDragStartFromRemainingPointer();
+        }
+    } else if (mapState.pointerId === event.pointerId) {
+        const wasDrag = mapState.dragDistancePx >= MAP_DRAG_THRESHOLD_PX;
+
+        if (wasDrag) {
+            mapState.suppressNextMarkerClick = true;
+            mapState.lastTouchTapAtMs = 0;
+        } else if (mapState.pressedSiteId !== null) {
+            selectSite(mapState.pressedSiteId);
+            mapState.suppressNextMarkerClick = true;
+            mapState.lastTouchTapAtMs = 0;
+        } else if (event.pointerType === "touch") {
+            const nowMs = Date.now();
+            const isDoubleTap = nowMs - mapState.lastTouchTapAtMs <=
+                MAP_DOUBLE_TAP_WINDOW_MS;
+
+            if (isDoubleTap) {
+                resetMapViewBox();
+                mapState.suppressNextMarkerClick = true;
+                mapState.lastTouchTapAtMs = 0;
+            } else {
+                mapState.lastTouchTapAtMs = nowMs;
+            }
+        }
+
+        mapState.pointerId = null;
+        mapState.dragDistancePx = 0;
+        mapState.pressedSiteId = null;
+    }
+
+    if (mapState.activePointers.size === 0) {
+        elements.radarMap.classList.remove("is-dragging");
+    }
 }
 
 function resetMapViewBox() {
-    setMapViewBox(0, 0);
+    setMapViewBox(0, 0, MAP_VIEWBOX_WIDTH, MAP_VIEWBOX_HEIGHT);
 }
 
-function setMapViewBox(x, y) {
+function setMapViewBox(x, y, width, height) {
     if (!elements.radarMap) {
         return;
     }
 
-    mapState.viewBoxX = x;
-    mapState.viewBoxY = y;
+    const widthValue = width ?? mapState.viewBoxWidth;
+    const heightValue = height ?? mapState.viewBoxHeight;
+    const sourceZoom = MAP_VIEWBOX_WIDTH / widthValue;
+    const clampedZoom = clamp(sourceZoom, MAP_MIN_ZOOM, MAP_MAX_ZOOM);
+    const nextWidth = MAP_VIEWBOX_WIDTH / clampedZoom;
+    const nextHeight = MAP_VIEWBOX_HEIGHT / clampedZoom;
+    const maxX = (MAP_MIN_X + MAP_EXTENT_WIDTH) - nextWidth;
+    const maxY = (MAP_MIN_Y + MAP_EXTENT_HEIGHT) - nextHeight;
+    const nextX = clamp(x, MAP_MIN_X, maxX);
+    const nextY = clamp(y, MAP_MIN_Y, maxY);
+
+    mapState.viewBoxX = nextX;
+    mapState.viewBoxY = nextY;
+    mapState.viewBoxWidth = nextWidth;
+    mapState.viewBoxHeight = nextHeight;
+    mapState.zoom = clampedZoom;
 
     elements.radarMap.setAttribute(
         "viewBox",
-        `${x} ${y} ${MAP_VIEWBOX_WIDTH} ${MAP_VIEWBOX_HEIGHT}`,
+        `${nextX} ${nextY} ${nextWidth} ${nextHeight}`,
     );
 }
 
@@ -467,6 +609,121 @@ function consumeSuppressedMarkerClick() {
 
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
+}
+
+function beginPinchGesture() {
+    const pointers = getTwoPointers();
+    if (!pointers) {
+        return;
+    }
+
+    const [pointerA, pointerB] = pointers;
+    mapState.isPinching = true;
+    mapState.dragDistancePx = MAP_DRAG_THRESHOLD_PX;
+    mapState.pressedSiteId = null;
+    mapState.pinchStartDistance = Math.max(
+        getDistanceBetweenPointers(pointerA, pointerB),
+        1,
+    );
+    mapState.pinchStartZoom = mapState.zoom;
+
+    const pinchCenter = getPointerMidpoint(pointerA, pointerB);
+    const anchor = clientToViewBox(pinchCenter.clientX, pinchCenter.clientY);
+    mapState.pinchStartAnchorX = anchor.x;
+    mapState.pinchStartAnchorY = anchor.y;
+}
+
+function updatePinchGesture() {
+    const pointers = getTwoPointers();
+    if (!pointers || !elements.radarMap) {
+        return;
+    }
+
+    const [pointerA, pointerB] = pointers;
+    const distance = Math.max(getDistanceBetweenPointers(pointerA, pointerB), 1);
+    const zoomFactor = distance / mapState.pinchStartDistance;
+    const nextZoom = mapState.pinchStartZoom * zoomFactor;
+    const clampedZoom = clamp(nextZoom, MAP_MIN_ZOOM, MAP_MAX_ZOOM);
+    const nextWidth = MAP_VIEWBOX_WIDTH / clampedZoom;
+    const nextHeight = MAP_VIEWBOX_HEIGHT / clampedZoom;
+    const pinchCenter = getPointerMidpoint(pointerA, pointerB);
+    const rect = elements.radarMap.getBoundingClientRect();
+    const fx = clamp((pinchCenter.clientX - rect.left) / rect.width, 0, 1);
+    const fy = clamp((pinchCenter.clientY - rect.top) / rect.height, 0, 1);
+    const nextX = mapState.pinchStartAnchorX - (fx * nextWidth);
+    const nextY = mapState.pinchStartAnchorY - (fy * nextHeight);
+
+    setMapViewBox(nextX, nextY, nextWidth, nextHeight);
+}
+
+function resetDragStartFromRemainingPointer() {
+    const remainingPointer = getFirstPointer();
+
+    if (!remainingPointer) {
+        mapState.pointerId = null;
+        mapState.dragDistancePx = 0;
+        mapState.pressedSiteId = null;
+        return;
+    }
+
+    mapState.pointerId = remainingPointer.pointerId;
+    mapState.dragStartClientX = remainingPointer.clientX;
+    mapState.dragStartClientY = remainingPointer.clientY;
+    mapState.dragStartViewBoxX = mapState.viewBoxX;
+    mapState.dragStartViewBoxY = mapState.viewBoxY;
+    mapState.dragDistancePx = 0;
+    mapState.pressedSiteId = null;
+}
+
+function getFirstPointer() {
+    for (const [pointerId, pointer] of mapState.activePointers.entries()) {
+        return {
+            pointerId,
+            clientX: pointer.clientX,
+            clientY: pointer.clientY,
+        };
+    }
+
+    return null;
+}
+
+function getTwoPointers() {
+    const pointers = Array.from(mapState.activePointers.values());
+
+    if (pointers.length < 2) {
+        return null;
+    }
+
+    return [pointers[0], pointers[1]];
+}
+
+function getDistanceBetweenPointers(pointerA, pointerB) {
+    return Math.hypot(
+        pointerA.clientX - pointerB.clientX,
+        pointerA.clientY - pointerB.clientY,
+    );
+}
+
+function getPointerMidpoint(pointerA, pointerB) {
+    return {
+        clientX: (pointerA.clientX + pointerB.clientX) / 2,
+        clientY: (pointerA.clientY + pointerB.clientY) / 2,
+    };
+}
+
+function clientToViewBox(clientX, clientY) {
+    if (!elements.radarMap) {
+        return { x: mapState.viewBoxX, y: mapState.viewBoxY };
+    }
+
+    const rect = elements.radarMap.getBoundingClientRect();
+    const fx = clamp((clientX - rect.left) / rect.width, 0, 1);
+    const fy = clamp((clientY - rect.top) / rect.height, 0, 1);
+
+    return {
+        x: mapState.viewBoxX + (fx * mapState.viewBoxWidth),
+        y: mapState.viewBoxY + (fy * mapState.viewBoxHeight),
+    };
 }
 
 function getSiteIdFromEventTarget(target) {

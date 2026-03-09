@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MaltaDiveRadar</title>
-    <link rel="stylesheet" href="/css/site.css" />
+    <link rel="stylesheet" href="/css/site.css?v=20260309.1" />
 </head>
 <body>
     <div class="scanlines" aria-hidden="true"></div>
@@ -26,53 +26,87 @@
                 <p>Tap or click markers for site detail</p>
             </div>
 
-            <svg
-                id="radarMap"
-                viewBox="0 0 1000 620"
-                role="img"
-                aria-label="Stylized map of Malta, Gozo, and Comino with dive markers"
-            >
-                <defs>
-                    <pattern
-                        id="radarGridExtended"
-                        width="32"
-                        height="32"
-                        patternUnits="userSpaceOnUse"
+            <div class="radar-stage">
+                <svg
+                    id="radarMap"
+                    viewBox="0 0 1000 620"
+                    role="img"
+                    aria-label="Stylized map of Malta, Gozo, and Comino with dive markers"
+                >
+                    <defs>
+                        <pattern
+                            id="radarGridExtended"
+                            width="32"
+                            height="32"
+                            patternUnits="userSpaceOnUse"
+                        >
+                            <path
+                                d="M32 0H0V32"
+                                fill="none"
+                                stroke="rgba(96, 150, 137, 0.12)"
+                                stroke-width="1"
+                            />
+                        </pattern>
+                    </defs>
+
+                    <rect
+                        x="-220"
+                        y="-140"
+                        width="1440"
+                        height="900"
+                        fill="#071310"
+                    ></rect>
+                    <rect
+                        x="-220"
+                        y="-140"
+                        width="1440"
+                        height="900"
+                        fill="url(#radarGridExtended)"
+                    ></rect>
+
+                    <image
+                        href="/assets/malta-gozo-map.svg?v=20260309.1"
+                        x="0"
+                        y="0"
+                        width="1000"
+                        height="620"
+                        preserveAspectRatio="xMidYMid meet"
+                    ></image>
+                    <g id="markerLayer"></g>
+                </svg>
+
+                <div class="map-controls" aria-label="Map zoom controls">
+                    <button
+                        id="zoomInButton"
+                        type="button"
+                        class="map-control-button"
+                        data-map-action="zoom-in"
+                        aria-label="Zoom in"
                     >
-                        <path
-                            d="M32 0H0V32"
-                            fill="none"
-                            stroke="rgba(96, 150, 137, 0.12)"
-                            stroke-width="1"
-                        />
-                    </pattern>
-                </defs>
+                        +
+                    </button>
+                    <button
+                        id="zoomOutButton"
+                        type="button"
+                        class="map-control-button"
+                        data-map-action="zoom-out"
+                        aria-label="Zoom out"
+                    >
+                        -
+                    </button>
+                    <button
+                        id="resetViewButton"
+                        type="button"
+                        class="map-control-button map-control-reset"
+                        data-map-action="zoom-reset"
+                        aria-label="Reset map view"
+                    >
+                        R
+                    </button>
+                </div>
+            </div>
 
-                <rect
-                    x="-220"
-                    y="-140"
-                    width="1440"
-                    height="900"
-                    fill="#071310"
-                ></rect>
-                <rect
-                    x="-220"
-                    y="-140"
-                    width="1440"
-                    height="900"
-                    fill="url(#radarGridExtended)"
-                ></rect>
-
-                <image
-                    href="/assets/malta-gozo-map.svg"
-                    x="0"
-                    y="0"
-                    width="1000"
-                    height="620"
-                    preserveAspectRatio="xMidYMid meet"
-                ></image>
-                <g id="markerLayer"></g>
-            </svg>
+            <p class="map-hint">Drag to pan. Pinch or wheel to zoom. Double-tap or R to reset.</p>
 
             <div class="legend">
                 <span><i class="swatch swatch-good"></i>Good</span>
@@ -142,6 +176,6 @@
         </aside>
     </main>
 
-    <script type="module" src="/js/main.js"></script>
+    <script type="module" src="/js/main.js?v=20260309.1"></script>
 </body>
 </html>
