@@ -4,9 +4,11 @@
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <ProjectReference Include="..\MaltaDiveWeather.Domain\MaltaDiveWeather.Domain.csproj" />
-    <ProjectReference Include="..\MaltaDiveWeather.Application\MaltaDiveWeather.Application.csproj" />
-    <ProjectReference Include="..\MaltaDiveWeather.Infrastructure\MaltaDiveWeather.Infrastructure.csproj" />
+    <ProjectReference Include="..\Abstractions\Abstractions.csproj" />
+    <ProjectReference Include="..\Logic\Logic.csproj" />
+    <ProjectReference Include="..\Models\Models.csproj" />
+    <ProjectReference Include="..\Storage\Storage.csproj" />
+    <ProjectReference Include="..\Transport\Transport.csproj" />
   </ItemGroup>
 
 </Project>

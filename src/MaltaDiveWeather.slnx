@@ -1,6 +1,8 @@
 <Solution>
-  <Project Path="MaltaDiveWeather.Application/MaltaDiveWeather.Application.csproj" />
-  <Project Path="MaltaDiveWeather.Domain/MaltaDiveWeather.Domain.csproj" />
-  <Project Path="MaltaDiveWeather.Infrastructure/MaltaDiveWeather.Infrastructure.csproj" />
+  <Project Path="Abstractions/Abstractions.csproj" />
+  <Project Path="Models/Models.csproj" />
+  <Project Path="Logic/Logic.csproj" />
+  <Project Path="Storage/Storage.csproj" />
+  <Project Path="Transport/Transport.csproj" />
   <Project Path="MaltaDiveWeather.Web/MaltaDiveWeather.Web.csproj" />
 </Solution>
