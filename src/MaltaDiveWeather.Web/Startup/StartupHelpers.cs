@@ -169,6 +169,10 @@ internal static class StartupHelpers
                     });
             });
 
+        app.MapGet(
+            "/hc",
+            static () => Results.Ok());
+
         app.MapFallbackToFile("index.html");
     }
 
