@@ -47,6 +47,49 @@ public sealed class SeaConditionClassifierTests
         // Assert
         result.Status.Should().Be(SeaConditionStatus.Caution);
     }
+
+    [Fact(DisplayName = "Evaluate returns Rough when wind speed is strong")]
+    public void EvaluateReturnsRoughWhenWindSpeedIsStrong()
+    {
+        // Arrange
+        var sut = new SeaConditionClassifier();
+        var wind = WindSpeed.FromMetersPerSecond(9.1D);
+
+        // Act
+        var result = sut.Evaluate(WaveHeight.FromMeters(0.2D), wind);
+
+        // Assert
+        result.Status.Should().Be(SeaConditionStatus.Rough);
+    }
+
+    [Fact(DisplayName = "Evaluate returns Caution when wave height is moderate")]
+    public void EvaluateReturnsCautionWhenWaveHeightIsModerate()
+    {
+        // Arrange
+        var sut = new SeaConditionClassifier();
+        var wave = WaveHeight.FromMeters(0.7D);
+
+        // Act
+        var result = sut.Evaluate(wave, WindSpeed.FromMetersPerSecond(2D));
+
+        // Assert
+        result.Status.Should().Be(SeaConditionStatus.Caution);
+    }
+
+    [Fact(DisplayName = "Evaluate returns Good when wave and wind are mild")]
+    public void EvaluateReturnsGoodWhenWaveAndWindAreMild()
+    {
+        // Arrange
+        var sut = new SeaConditionClassifier();
+
+        // Act
+        var result = sut.Evaluate(
+            WaveHeight.FromMeters(0.3D),
+            WindSpeed.FromMetersPerSecond(3D));
+
+        // Assert
+        result.Status.Should().Be(SeaConditionStatus.Good);
+    }
 }
 
 
