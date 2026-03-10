@@ -1,8 +1,13 @@
 <Solution>
   <Project Path="Abstractions/Abstractions.csproj" />
   <Project Path="Models/Models.csproj" />
+  <Project Path="Models.Tests/Models.Tests.csproj" />
   <Project Path="Logic/Logic.csproj" />
+  <Project Path="Logic.Tests/Logic.Tests.csproj" />
   <Project Path="Storage/Storage.csproj" />
+  <Project Path="Storage.Tests/Storage.Tests.csproj" />
   <Project Path="Transport/Transport.csproj" />
+  <Project Path="Transport.Tests/Transport.Tests.csproj" />
   <Project Path="MaltaDiveWeather.Web/MaltaDiveWeather.Web.csproj" />
+  <Project Path="MaltaDiveWeather.Web.Tests/MaltaDiveWeather.Web.Tests.csproj" />
 </Solution>
