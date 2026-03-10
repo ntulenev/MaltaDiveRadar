@@ -11,6 +11,11 @@ import {
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
+const STARTUP_POLL_INTERVAL_MS = 10 * 1000;
+const STARTUP_POLL_MAX_DURATION_MS = 60 * 60 * 1000;
+const STARTUP_POLL_MAX_ATTEMPTS = Math.floor(
+    STARTUP_POLL_MAX_DURATION_MS / STARTUP_POLL_INTERVAL_MS,
+);
 const MAP_VIEWBOX_WIDTH = 1000;
 const MAP_VIEWBOX_HEIGHT = 620;
 const MAP_MIN_X = -220;
@@ -34,6 +39,11 @@ const state = {
     weatherBySite: new Map(),
     selectedSiteId: null,
     lastRefreshUtc: null,
+};
+
+const refreshLoopState = {
+    timerId: null,
+    startupPollAttempts: 0,
 };
 
 const mapState = {
@@ -89,10 +99,44 @@ window.addEventListener("DOMContentLoaded", () => {
 
 async function initializeAsync() {
     await refreshDashboardAsync();
+    scheduleNextRefreshAsync();
+}
 
-    window.setInterval(() => {
-        void refreshDashboardAsync();
-    }, AUTO_REFRESH_MS);
+function scheduleNextRefreshAsync() {
+    if (refreshLoopState.timerId !== null) {
+        window.clearTimeout(refreshLoopState.timerId);
+        refreshLoopState.timerId = null;
+    }
+
+    const useStartupPolling = shouldUseStartupPollingMode();
+    const delayMs = useStartupPolling
+        ? STARTUP_POLL_INTERVAL_MS
+        : AUTO_REFRESH_MS;
+
+    if (useStartupPolling) {
+        refreshLoopState.startupPollAttempts += 1;
+    }
+
+    refreshLoopState.timerId = window.setTimeout(() => {
+        refreshLoopState.timerId = null;
+        void runScheduledRefreshAsync();
+    }, delayMs);
+}
+
+async function runScheduledRefreshAsync() {
+    await refreshDashboardAsync();
+    scheduleNextRefreshAsync();
+}
+
+function shouldUseStartupPollingMode() {
+    const newestSnapshotUtc = getNewestSnapshotTimestampUtc();
+
+    if (state.lastRefreshUtc || newestSnapshotUtc) {
+        refreshLoopState.startupPollAttempts = 0;
+        return false;
+    }
+
+    return refreshLoopState.startupPollAttempts < STARTUP_POLL_MAX_ATTEMPTS;
 }
 
 async function refreshDashboardAsync() {
@@ -140,15 +184,19 @@ function renderHeader() {
         return;
     }
 
-    const newestSnapshot = Array.from(state.weatherBySite.values())
-        .map((snapshot) => snapshot.lastUpdatedUtc)
-        .filter((value) => !!value)
-        .sort()
-        .at(-1);
+    const newestSnapshot = getNewestSnapshotTimestampUtc();
 
     elements.lastRefresh.textContent = newestSnapshot
         ? formatTimestamp(newestSnapshot)
         : "No completed refresh yet";
+}
+
+function getNewestSnapshotTimestampUtc() {
+    return Array.from(state.weatherBySite.values())
+        .map((snapshot) => snapshot.lastUpdatedUtc)
+        .filter((value) => !!value)
+        .sort()
+        .at(-1);
 }
 
 function renderMarkers() {
