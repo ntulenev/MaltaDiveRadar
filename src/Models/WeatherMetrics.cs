@@ -14,13 +14,17 @@ public sealed class WeatherMetrics
     /// <param name="windDirectionDeg">Wind-direction value.</param>
     /// <param name="waveHeightM">Wave-height value.</param>
     /// <param name="seaStateText">Sea-state text value.</param>
+    /// <param name="generalWeather">
+    /// General weather category value.
+    /// </param>
     public WeatherMetrics(
         AirTemperature? airTemperatureC,
         WaterTemperature? waterTemperatureC,
         WindSpeed? windSpeedMps,
         WindDirection? windDirectionDeg,
         WaveHeight? waveHeightM,
-        SeaStateText? seaStateText)
+        SeaStateText? seaStateText,
+        GeneralWeatherKind? generalWeather = null)
     {
         AirTemperatureC = airTemperatureC;
         WaterTemperatureC = waterTemperatureC;
@@ -28,6 +32,7 @@ public sealed class WeatherMetrics
         WindDirectionDeg = windDirectionDeg;
         WaveHeightM = waveHeightM;
         SeaStateText = seaStateText;
+        GeneralWeather = generalWeather;
     }
 
     /// <summary>
@@ -61,9 +66,15 @@ public sealed class WeatherMetrics
     public SeaStateText? SeaStateText { get; }
 
     /// <summary>
+    /// Gets general weather category.
+    /// </summary>
+    public GeneralWeatherKind? GeneralWeather { get; }
+
+    /// <summary>
     /// Gets an empty metrics object.
     /// </summary>
     public static WeatherMetrics Empty { get; } = new(
+        null,
         null,
         null,
         null,
@@ -82,7 +93,8 @@ public sealed class WeatherMetrics
             WindSpeedMps is not null ||
             WindDirectionDeg is not null ||
             WaveHeightM is not null ||
-            SeaStateText is not null;
+            SeaStateText is not null ||
+            GeneralWeather is not null;
     }
 
     /// <summary>

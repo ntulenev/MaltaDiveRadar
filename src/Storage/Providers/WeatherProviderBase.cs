@@ -196,6 +196,7 @@ public abstract partial class WeatherProviderBase : IWeatherProvider
     /// <param name="windDirectionDeg">Wind direction in degrees.</param>
     /// <param name="waveHeightM">Wave height in meters.</param>
     /// <param name="seaStateText">Sea state text.</param>
+    /// <param name="generalWeather">General weather category.</param>
     /// <param name="observationTimeUtc">Observation timestamp in UTC.</param>
     /// <param name="qualityScore">Provider quality score.</param>
     /// <returns>Success snapshot.</returns>
@@ -206,6 +207,7 @@ public abstract partial class WeatherProviderBase : IWeatherProvider
         int? windDirectionDeg,
         double? waveHeightM,
         string? seaStateText,
+        GeneralWeatherKind? generalWeather,
         DateTimeOffset? observationTimeUtc,
         double qualityScore)
     {
@@ -219,7 +221,8 @@ public abstract partial class WeatherProviderBase : IWeatherProvider
             ToWindSpeed(windSpeedMps),
             ToWindDirection(windDirectionDeg),
             ToWaveHeight(waveHeightM),
-            ToSeaStateText(seaStateText));
+            ToSeaStateText(seaStateText),
+            generalWeather);
         var fetchInfo = new ProviderFetchInfo(
             observationTimeUtc,
             _timeProvider.GetUtcNow(),

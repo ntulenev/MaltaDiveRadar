@@ -172,6 +172,37 @@ body {
     font-size: 0.8rem;
 }
 
+.panel-heading-site {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.8rem;
+}
+
+.general-weather {
+    min-width: 190px;
+    border: 1px solid rgba(87, 125, 112, 0.3);
+    background: rgba(8, 18, 15, 0.65);
+    padding: 0.45rem 0.55rem;
+    text-align: right;
+}
+
+.general-weather-label {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.67rem;
+    letter-spacing: 0.06rem;
+    text-transform: uppercase;
+}
+
+.general-weather-value {
+    display: block;
+    margin-top: 0.3rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
 .radar-stage {
     position: relative;
 }
@@ -470,6 +501,16 @@ body {
 
     .panel-heading p {
         font-size: 0.74rem;
+    }
+
+    .panel-heading-site {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .general-weather {
+        min-width: 0;
+        text-align: left;
     }
 
     .radar-panel,

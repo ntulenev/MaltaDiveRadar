@@ -78,6 +78,7 @@ const elements = {
     lastRefresh: document.getElementById("lastRefresh"),
     siteName: document.getElementById("siteName"),
     siteMeta: document.getElementById("siteMeta"),
+    generalWeather: document.getElementById("generalWeather"),
     conditionBadge: document.getElementById("conditionBadge"),
     conditionSummary: document.getElementById("conditionSummary"),
     airTemp: document.getElementById("airTemp"),
@@ -284,6 +285,7 @@ function renderSitePanel() {
 
     elements.siteName.textContent = site.name;
     elements.siteMeta.textContent = `${site.island}  | ${site.latitude.toFixed(4)}, ${site.longitude.toFixed(4)}`;
+    elements.generalWeather.textContent = formatGeneralWeather(snapshot);
 
     elements.conditionBadge.className = `condition-badge ${badgeClass(snapshot)}`;
     elements.conditionBadge.textContent = snapshot
@@ -347,6 +349,7 @@ function selectSite(siteId) {
 function resetPanel(siteName, siteMeta) {
     elements.siteName.textContent = siteName;
     elements.siteMeta.textContent = siteMeta;
+    elements.generalWeather.textContent = "--";
     elements.conditionBadge.className = "condition-badge condition-unknown";
     elements.conditionBadge.textContent = "No Data";
     elements.conditionSummary.textContent =
@@ -800,4 +803,33 @@ function formatWindDirection(snapshot) {
 
     const cardinal = snapshot.windDirectionCardinal ?? "";
     return `${snapshot.windDirectionDeg} deg ${cardinal}`.trim();
+}
+
+function formatGeneralWeather(snapshot) {
+    if (!snapshot) {
+        return "--";
+    }
+
+    const generalWeatherText = typeof snapshot.generalWeatherText === "string"
+        ? snapshot.generalWeatherText.trim()
+        : "";
+
+    if (generalWeatherText.length > 0) {
+        return generalWeatherText;
+    }
+
+    const status = String(snapshot.conditionStatus ?? "").toLowerCase();
+    if (status === "good") {
+        return "Fair";
+    }
+
+    if (status === "caution") {
+        return "Variable";
+    }
+
+    if (status === "rough") {
+        return "Unsettled";
+    }
+
+    return "--";
 }

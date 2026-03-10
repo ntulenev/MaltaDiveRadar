@@ -59,7 +59,7 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
         var forecastUri =
             $"https://api.open-meteo.com/v1/forecast?latitude={latitudeValue}" +
             $"&longitude={longitudeValue}" +
-            "&current=temperature_2m,wind_speed_10m,wind_direction_10m" +
+            "&current=temperature_2m,wind_speed_10m,wind_direction_10m,weather_code" +
             "&wind_speed_unit=ms&timezone=UTC";
 
         var marineUri =
@@ -88,6 +88,7 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
             out var airTemperature,
             out var windSpeed,
             out var windDirection,
+            out var generalWeather,
             out var forecastObservationUtc);
 
         _ = TryParseMarine(
@@ -100,7 +101,8 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
             windSpeed is null &&
             windDirection is null &&
             waterTemperature is null &&
-            waveHeight is null)
+            waveHeight is null &&
+            generalWeather is null)
         {
             return CreateFailureSnapshot(
                 "Open-Meteo returned payloads without usable metrics.");
@@ -124,6 +126,7 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
             windDirection,
             waveHeight,
             DescribeSeaState(waveHeight),
+            generalWeather,
             observationTimeUtc,
             qualityScore);
     }
@@ -133,11 +136,13 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
         out double? airTemperature,
         out double? windSpeed,
         out int? windDirection,
+        out GeneralWeatherKind? generalWeather,
         out DateTimeOffset? observationUtc)
     {
         airTemperature = null;
         windSpeed = null;
         windDirection = null;
+        generalWeather = null;
         observationUtc = null;
 
         if (string.IsNullOrWhiteSpace(payload))
@@ -166,6 +171,11 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
             windDirection = JsonValueReader.TryReadInt(
                 current,
                 "wind_direction_10m");
+
+            var weatherCode = JsonValueReader.TryReadInt(
+                current,
+                "weather_code");
+            generalWeather = MapWeatherCode(weatherCode);
 
             observationUtc = JsonValueReader.TryReadDateTimeOffset(
                 current,
@@ -315,6 +325,27 @@ public sealed class OpenMeteoProvider : WeatherProviderBase
             < 1.4D => "Moderate chop",
             < 2.1D => "Rough sea",
             _ => "Very rough sea",
+        };
+    }
+
+    private static GeneralWeatherKind? MapWeatherCode(int? weatherCode)
+    {
+        if (weatherCode is null)
+        {
+            return null;
+        }
+
+        return weatherCode.Value switch
+        {
+            0 => GeneralWeatherKind.Sunny,
+            1 or 2 => GeneralWeatherKind.PartlyCloudy,
+            3 => GeneralWeatherKind.Cloudy,
+            45 or 48 => GeneralWeatherKind.Fog,
+            51 or 53 or 55 or 56 or 57 => GeneralWeatherKind.Drizzle,
+            61 or 63 or 65 or 66 or 67 or 80 or 81 or 82 => GeneralWeatherKind.Rain,
+            71 or 73 or 75 or 77 or 85 or 86 => GeneralWeatherKind.Snow,
+            95 or 96 or 99 => GeneralWeatherKind.Thunderstorm,
+            _ => GeneralWeatherKind.Mixed,
         };
     }
 

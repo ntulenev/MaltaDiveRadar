@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MaltaDiveRadar</title>
-    <link rel="stylesheet" href="/css/site.css?v=20260309.2" />
+    <link rel="stylesheet" href="/css/site.css?v=20260310.2" />
 </head>
 <body>
     <div class="scanlines" aria-hidden="true"></div>
@@ -117,9 +117,15 @@
         </section>
 
         <aside class="site-panel" aria-live="polite">
-            <div class="panel-heading">
-                <h2 id="siteName">Select a dive site</h2>
-                <p id="siteMeta">Awaiting marker selection</p>
+            <div class="panel-heading panel-heading-site">
+                <div>
+                    <h2 id="siteName">Select a dive site</h2>
+                    <p id="siteMeta">Awaiting marker selection</p>
+                </div>
+                <div class="general-weather">
+                    <span class="general-weather-label">General Weather</span>
+                    <strong id="generalWeather" class="general-weather-value">--</strong>
+                </div>
             </div>
 
             <div id="conditionBadge" class="condition-badge condition-unknown">
@@ -190,6 +196,6 @@
         </p>
     </footer>
 
-    <script type="module" src="/js/main.js?v=20260310.1"></script>
+    <script type="module" src="/js/main.js?v=20260310.2"></script>
 </body>
 </html>

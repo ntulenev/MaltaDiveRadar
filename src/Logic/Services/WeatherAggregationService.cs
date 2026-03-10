@@ -239,6 +239,11 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
             static snapshot => snapshot.SeaStateText is not null,
             true);
 
+        var generalWeatherSource = SelectBestProviderForMetric(
+            successfulSnapshots,
+            static snapshot => snapshot.GeneralWeather is not null,
+            false);
+
         var condition = _seaConditionClassifier.Evaluate(
             waveSource?.WaveHeightM,
             windSpeedSource?.WindSpeedMps);
@@ -254,6 +259,7 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
                 windDirectionSource?.ProviderName,
                 waveSource?.ProviderName,
                 seaTextSource?.ProviderName,
+                generalWeatherSource?.ProviderName,
             }
             .OfType<ProviderName>()
             .ToArray();
@@ -275,7 +281,8 @@ public sealed partial class WeatherAggregationService : IWeatherAggregationServi
             windSpeedSource?.WindSpeedMps,
             windDirectionSource?.WindDirectionDeg,
             waveSource?.WaveHeightM,
-            seaTextSource?.SeaStateText);
+            seaTextSource?.SeaStateText,
+            generalWeatherSource?.GeneralWeather);
         var siteInfo = DiveSiteSnapshotInfo.FromDiveSite(site);
         var snapshotCondition = new WeatherSnapshotCondition(
             condition.Status,

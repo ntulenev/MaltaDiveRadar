@@ -104,6 +104,11 @@ public sealed class WeatherSnapshot
     public SeaStateText? SeaStateText => Metrics.SeaStateText;
 
     /// <summary>
+    /// Gets general weather category.
+    /// </summary>
+    public GeneralWeatherKind? GeneralWeather => Metrics.GeneralWeather;
+
+    /// <summary>
     /// Gets summarized condition status.
     /// </summary>
     public SeaConditionStatus ConditionStatus => Condition.Status;

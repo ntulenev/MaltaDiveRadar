@@ -98,6 +98,11 @@ public sealed class WeatherProviderSnapshot
     public SeaStateText? SeaStateText => Metrics.SeaStateText;
 
     /// <summary>
+    /// Gets general weather category.
+    /// </summary>
+    public GeneralWeatherKind? GeneralWeather => Metrics.GeneralWeather;
+
+    /// <summary>
     /// Gets the provider observation timestamp in UTC.
     /// </summary>
     public DateTimeOffset? ObservationTimeUtc => FetchInfo.ObservationTimeUtc;

@@ -56,6 +56,11 @@ public sealed record WeatherSnapshotDto
     public string? SeaStateText { get; init; }
 
     /// <summary>
+    /// Gets general weather text (for example: Sunny, Rain).
+    /// </summary>
+    public string? GeneralWeatherText { get; init; }
+
+    /// <summary>
     /// Gets condition badge value.
     /// </summary>
     public required string ConditionStatus { get; init; }

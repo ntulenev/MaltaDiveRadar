@@ -132,6 +132,7 @@ public sealed class WeatherProviderBaseTests
                 windDirectionDeg: 90,
                 waveHeightM: 0.5D,
                 seaStateText: "Calm sea",
+                generalWeather: GeneralWeatherKind.Sunny,
                 observationTimeUtc: DateTimeOffset.Parse("2026-03-10T11:00:00+00:00"),
                 qualityScore: 0.8D);
 

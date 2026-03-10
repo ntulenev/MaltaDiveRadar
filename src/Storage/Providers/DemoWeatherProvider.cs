@@ -77,6 +77,12 @@ public sealed class DemoWeatherProvider : IWeatherProvider
         var windDirectionValue = WindDirection.FromDegrees(windDirection);
         var waveHeightValue = WaveHeight.FromMeters(
             Math.Round(waveHeight, 2));
+        var generalWeather = mode switch
+        {
+            0 => GeneralWeatherKind.Sunny,
+            1 => GeneralWeatherKind.PartlyCloudy,
+            _ => GeneralWeatherKind.Rain,
+        };
 
         var provider = new WeatherProviderMetadata(
             ProviderName,
@@ -88,7 +94,8 @@ public sealed class DemoWeatherProvider : IWeatherProvider
             windSpeedValue,
             windDirectionValue,
             waveHeightValue,
-            SeaStateText.From(DescribeSeaState(waveHeightValue)));
+            SeaStateText.From(DescribeSeaState(waveHeightValue)),
+            generalWeather);
         var fetchInfo = new ProviderFetchInfo(
             hourStart,
             nowUtc,

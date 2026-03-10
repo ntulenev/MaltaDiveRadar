@@ -84,6 +84,7 @@ public sealed class OpenWeatherProvider : WeatherProviderBase
             out var airTemperature,
             out var windSpeed,
             out var windDirection,
+            out var generalWeather,
             out var observationUtc);
 
         if (!parseSuccess)
@@ -115,6 +116,7 @@ public sealed class OpenWeatherProvider : WeatherProviderBase
             windDirection,
             null,
             null,
+            generalWeather,
             observationUtc,
             qualityScore);
     }
@@ -124,11 +126,13 @@ public sealed class OpenWeatherProvider : WeatherProviderBase
         out double? airTemperature,
         out double? windSpeed,
         out int? windDirection,
+        out GeneralWeatherKind? generalWeather,
         out DateTimeOffset? observationUtc)
     {
         airTemperature = null;
         windSpeed = null;
         windDirection = null;
+        generalWeather = null;
         observationUtc = null;
 
         if (string.IsNullOrWhiteSpace(payload))
@@ -150,6 +154,30 @@ public sealed class OpenWeatherProvider : WeatherProviderBase
             {
                 windSpeed = JsonValueReader.TryReadDouble(wind, "speed");
                 windDirection = JsonValueReader.TryReadInt(wind, "deg");
+            }
+
+            if (root.TryGetProperty("weather", out var weatherArray) &&
+                weatherArray.ValueKind is JsonValueKind.Array &&
+                weatherArray.GetArrayLength() > 0)
+            {
+                var firstWeather = weatherArray[0];
+                string? weatherMainText = null;
+                string? weatherDescriptionText = null;
+
+                if (firstWeather.TryGetProperty("main", out var weatherMain) &&
+                    weatherMain.ValueKind is JsonValueKind.String)
+                {
+                    weatherMainText = weatherMain.GetString();
+                }
+
+                if (firstWeather.TryGetProperty("description", out var description) &&
+                    description.ValueKind is JsonValueKind.String)
+                {
+                    weatherDescriptionText = description.GetString();
+                }
+
+                generalWeather = GeneralWeatherClassifier.FromText(
+                    weatherDescriptionText ?? weatherMainText);
             }
 
             observationUtc = JsonValueReader.TryReadUnixTime(root, "dt");

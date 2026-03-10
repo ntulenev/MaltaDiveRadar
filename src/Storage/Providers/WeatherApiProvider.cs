@@ -83,6 +83,7 @@ public sealed class WeatherApiProvider : WeatherProviderBase
             out var airTemperature,
             out var windSpeed,
             out var windDirection,
+            out var generalWeather,
             out var observationUtc);
 
         if (!parseSuccess)
@@ -114,6 +115,7 @@ public sealed class WeatherApiProvider : WeatherProviderBase
             windDirection,
             null,
             null,
+            generalWeather,
             observationUtc,
             qualityScore);
     }
@@ -123,11 +125,13 @@ public sealed class WeatherApiProvider : WeatherProviderBase
         out double? airTemperature,
         out double? windSpeed,
         out int? windDirection,
+        out GeneralWeatherKind? generalWeather,
         out DateTimeOffset? observationUtc)
     {
         airTemperature = null;
         windSpeed = null;
         windDirection = null;
+        generalWeather = null;
         observationUtc = null;
 
         if (string.IsNullOrWhiteSpace(payload))
@@ -153,6 +157,14 @@ public sealed class WeatherApiProvider : WeatherProviderBase
             observationUtc = JsonValueReader.TryReadUnixTime(
                 current,
                 "last_updated_epoch");
+
+            if (current.TryGetProperty("condition", out var condition) &&
+                condition.TryGetProperty("text", out var conditionText) &&
+                conditionText.ValueKind is JsonValueKind.String)
+            {
+                generalWeather = GeneralWeatherClassifier.FromText(
+                    conditionText.GetString());
+            }
 
             return airTemperature is not null || windSpeed is not null;
         }

@@ -41,6 +41,7 @@ public static class ApiDtoMapper
                 snapshot.WindDirectionDeg?.Degrees),
             WaveHeightM = snapshot.WaveHeightM?.Meters,
             SeaStateText = snapshot.SeaStateText?.Value,
+            GeneralWeatherText = ToGeneralWeatherText(snapshot.GeneralWeather),
             ConditionStatus = snapshot.ConditionStatus.ToString(),
             ConditionSummary = snapshot.ConditionSummary.Value,
             ObservationTimeUtc = snapshot.ObservationTimeUtc,
@@ -89,6 +90,30 @@ public static class ApiDtoMapper
             MidpointRounding.AwayFromZero) % WindDirections.Length;
 
         return WindDirections[index];
+    }
+
+    private static string? ToGeneralWeatherText(
+        GeneralWeatherKind? generalWeather)
+    {
+        if (generalWeather is null)
+        {
+            return null;
+        }
+
+        return generalWeather.Value switch
+        {
+            GeneralWeatherKind.Unknown => "Unknown",
+            GeneralWeatherKind.Sunny => "Sunny",
+            GeneralWeatherKind.PartlyCloudy => "Partly cloudy",
+            GeneralWeatherKind.Cloudy => "Cloudy",
+            GeneralWeatherKind.Fog => "Fog",
+            GeneralWeatherKind.Drizzle => "Drizzle",
+            GeneralWeatherKind.Rain => "Rain",
+            GeneralWeatherKind.Snow => "Snow",
+            GeneralWeatherKind.Thunderstorm => "Thunderstorm",
+            GeneralWeatherKind.Mixed => "Mixed conditions",
+            _ => "Unknown",
+        };
     }
 
     private static readonly string[] WindDirections =
