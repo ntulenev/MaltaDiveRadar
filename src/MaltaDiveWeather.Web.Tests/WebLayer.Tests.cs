@@ -1,13 +1,17 @@
 using Abstractions;
+
 using FluentAssertions;
+
 using MaltaDiveWeather.Web.Configuration;
 using MaltaDiveWeather.Web.Services;
 using MaltaDiveWeather.Web.Startup;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+
 using Moq;
 
 namespace MaltaDiveWeather.Web.Tests;

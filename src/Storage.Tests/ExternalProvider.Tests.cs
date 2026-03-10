@@ -1,7 +1,10 @@
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+
 using Models;
+
 using Storage.Configuration;
 using Storage.Providers;
 

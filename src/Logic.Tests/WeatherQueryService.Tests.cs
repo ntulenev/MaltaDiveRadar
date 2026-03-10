@@ -1,10 +1,13 @@
 using Abstractions;
+
 using FluentAssertions;
+
 using Logic.Services;
-using Moq;
+using Logic.Tests.Helpers;
+
 using Models;
 
-using Logic.Tests.Helpers;
+using Moq;
 
 namespace Logic.Tests;
 

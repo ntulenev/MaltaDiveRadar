@@ -1,4 +1,5 @@
 using FluentAssertions;
+
 using Storage.Configuration;
 
 namespace Storage.Tests;

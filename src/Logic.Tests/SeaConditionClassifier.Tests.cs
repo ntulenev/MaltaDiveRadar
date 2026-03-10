@@ -1,5 +1,7 @@
 using FluentAssertions;
+
 using Logic.Services;
+
 using Models;
 
 namespace Logic.Tests;

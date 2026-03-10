@@ -5,9 +5,10 @@ using Abstractions;
 using Microsoft.AspNetCore.Diagnostics;
 
 using Models;
-using Transport;
 
 using Serilog;
+
+using Transport;
 
 namespace MaltaDiveWeather.Web.Startup;
 

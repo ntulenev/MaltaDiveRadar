@@ -1,11 +1,13 @@
 using Abstractions;
-using FluentAssertions;
-using Logic.Services;
-using Moq;
 
+using FluentAssertions;
+
+using Logic.Services;
 using Logic.Tests.Helpers;
 
 using Microsoft.Extensions.Logging.Abstractions;
+
+using Moq;
 
 namespace Logic.Tests;
 

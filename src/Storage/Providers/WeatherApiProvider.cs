@@ -1,10 +1,13 @@
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
-using Models;
-using Storage.Configuration;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using Models;
+
+using Storage.Configuration;
 
 namespace Storage.Providers;
 
