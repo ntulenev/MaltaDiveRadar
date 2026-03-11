@@ -43,6 +43,7 @@ public sealed class DiveSiteSeedData
         return new DiveSite(
             DiveSiteId.FromInt(site.Id),
             DiveSiteName.From(site.Name),
+            site.Description,
             IslandName.From(site.Island),
             Latitude.FromDegrees(site.Latitude),
             Longitude.FromDegrees(site.Longitude),

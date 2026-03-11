@@ -48,6 +48,7 @@ public sealed class ValueObjectsAndCoreModelsTests
         // Assert
         updated.IsActive.Should().BeFalse();
         updated.Id.Should().Be(site.Id);
+        updated.Description.Should().Be(site.Description);
     }
 
     [Fact(DisplayName = "DiveSite constructor throws for negative display coordinates")]
@@ -65,6 +66,7 @@ public sealed class ValueObjectsAndCoreModelsTests
             () => new DiveSite(
                 id,
                 name,
+                "Basic site description.",
                 island,
                 latitude,
                 longitude,
@@ -73,6 +75,32 @@ public sealed class ValueObjectsAndCoreModelsTests
 
         // Assert
         exception.Should().BeOfType<ArgumentOutOfRangeException>();
+    }
+
+    [Fact(DisplayName = "DiveSite constructor throws for empty description")]
+    public void DiveSiteConstructorThrowsForEmptyDescription()
+    {
+        // Arrange
+        var id = DiveSiteId.FromInt(1);
+        var name = DiveSiteName.From("Site");
+        var island = IslandName.From("Malta");
+        var latitude = Latitude.FromDegrees(35.0D);
+        var longitude = Longitude.FromDegrees(14.0D);
+
+        // Act
+        var exception = Record.Exception(
+            () => new DiveSite(
+                id,
+                name,
+                "   ",
+                island,
+                latitude,
+                longitude,
+                displayX: 1D,
+                displayY: 1D));
+
+        // Assert
+        exception.Should().BeOfType<ArgumentException>();
     }
 
     [Fact(DisplayName = "DiveSiteId.FromInt throws for non-positive values")]

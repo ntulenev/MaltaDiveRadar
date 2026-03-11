@@ -21,6 +21,7 @@ public sealed class TransportTests
         // Assert
         dto.Id.Should().Be(11);
         dto.Name.Should().Be("Ghar Lapsi");
+        dto.Description.Should().Be("Rocky site with easy shore access.");
         dto.Island.Should().Be("Malta");
     }
 
@@ -81,6 +82,7 @@ public sealed class TransportTests
         {
             Id = 1,
             Name = "Site",
+            Description = "Short description.",
             Island = "Malta",
             Latitude = 35.9D,
             Longitude = 14.3D,

@@ -174,6 +174,19 @@ internal static class StartupHelpers
             "/hc",
             static () => Results.Ok());
 
+        app.MapGet(
+            "/sites/{id:int}",
+            static (int id) =>
+            {
+                if (id <= 0)
+                {
+                    return Results.BadRequest(
+                        new { error = "Site ID must be positive." });
+                }
+
+                return Results.Redirect($"/site.html?id={id}");
+            });
+
         app.MapFallbackToFile("index.html");
     }
 

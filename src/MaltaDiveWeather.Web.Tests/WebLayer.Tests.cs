@@ -125,6 +125,7 @@ public sealed class WebLayerTests
             ["WeatherRefresh:HttpTimeoutSeconds"] = "20",
             ["DiveSites:Sites:0:Id"] = "1",
             ["DiveSites:Sites:0:Name"] = "Cirkewwa",
+            ["DiveSites:Sites:0:Description"] = "Simple shore dive with reef and caves.",
             ["DiveSites:Sites:0:Island"] = "Malta",
             ["DiveSites:Sites:0:Latitude"] = "35.99",
             ["DiveSites:Sites:0:Longitude"] = "14.34",

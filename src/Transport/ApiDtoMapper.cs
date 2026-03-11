@@ -15,6 +15,7 @@ public static class ApiDtoMapper
         {
             Id = site.Id.Value,
             Name = site.Name.Value,
+            Description = site.Description,
             Island = site.Island.Value,
             Latitude = site.Latitude.Degrees,
             Longitude = site.Longitude.Degrees,

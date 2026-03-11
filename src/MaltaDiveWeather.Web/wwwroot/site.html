@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dive Site Details | MaltaDiveRadar</title>
+    <link rel="stylesheet" href="/css/site.css?v=20260311.1" />
+</head>
+<body>
+    <div class="scanlines" aria-hidden="true"></div>
+
+    <header class="hud-header">
+        <div class="hud-title-block">
+            <h1>Dive Site Details</h1>
+            <p class="hud-kicker">Malta Dive Weather</p>
+            <div class="details-header-actions">
+                <a class="details-back-link" href="/">Back to Radar</a>
+            </div>
+        </div>
+        <div class="hud-refresh">
+            <span>Last update (Malta):</span>
+            <strong id="detailsLastRefresh">--</strong>
+        </div>
+    </header>
+
+    <main class="details-layout">
+        <section class="details-site-card" aria-live="polite">
+            <h2 id="detailsSiteName">Loading dive site...</h2>
+            <p id="detailsSiteMeta" class="details-site-meta">
+                Awaiting site data
+            </p>
+            <p id="detailsSiteDescription" class="details-site-description">
+                Loading place description...
+            </p>
+        </section>
+
+        <aside class="site-panel" aria-live="polite">
+            <div class="panel-heading panel-heading-site">
+                <div>
+                    <h2>Current Conditions</h2>
+                    <p id="detailsSnapshotMeta">Latest weather snapshot</p>
+                </div>
+                <div class="general-weather">
+                    <span class="general-weather-label">General Weather</span>
+                    <strong id="detailsGeneralWeather" class="general-weather-value">
+                        --
+                    </strong>
+                </div>
+            </div>
+
+            <div id="detailsConditionBadge" class="condition-badge condition-unknown">
+                No Data
+            </div>
+
+            <dl class="metric-grid">
+                <div>
+                    <dt>Air Temp</dt>
+                    <dd id="detailsAirTemp">--</dd>
+                </div>
+                <div>
+                    <dt>Water Temp</dt>
+                    <dd id="detailsWaterTemp">--</dd>
+                </div>
+                <div>
+                    <dt>Wind Speed</dt>
+                    <dd id="detailsWindSpeed">--</dd>
+                </div>
+                <div>
+                    <dt>Wind Direction</dt>
+                    <dd id="detailsWindDirection">--</dd>
+                </div>
+                <div>
+                    <dt>Wave Height</dt>
+                    <dd id="detailsWaveHeight">--</dd>
+                </div>
+                <div>
+                    <dt>Sea State</dt>
+                    <dd id="detailsSeaState">--</dd>
+                </div>
+                <div>
+                    <dt>Observation (Malta)</dt>
+                    <dd id="detailsObservationTime">--</dd>
+                </div>
+                <div>
+                    <dt>Updated (Malta)</dt>
+                    <dd id="detailsUpdatedTime">--</dd>
+                </div>
+                <div>
+                    <dt>Source</dt>
+                    <dd id="detailsProviderSource">--</dd>
+                </div>
+            </dl>
+
+            <p class="condition-summary" id="detailsConditionSummary">
+                Waiting for weather data.
+            </p>
+
+            <section class="provider-section">
+                <h3>Provider Diagnostics</h3>
+                <ul id="detailsProviderList"></ul>
+            </section>
+        </aside>
+    </main>
+
+    <script type="module" src="/js/site-details.js?v=20260311.1"></script>
+</body>
+</html>

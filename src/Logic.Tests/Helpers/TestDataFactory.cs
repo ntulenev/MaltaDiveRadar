@@ -7,6 +7,7 @@ public static class TestDataFactory
     public static DiveSite CreateDiveSite(
         int id = 1,
         string name = "Cirkewwa",
+        string description = "Rocky site with easy shore access.",
         string island = "Malta",
         double latitude = 35.9865D,
         double longitude = 14.3389D,
@@ -15,6 +16,7 @@ public static class TestDataFactory
         return new DiveSite(
             DiveSiteId.FromInt(id),
             DiveSiteName.From(name),
+            description,
             IslandName.From(island),
             Latitude.FromDegrees(latitude),
             Longitude.FromDegrees(longitude),

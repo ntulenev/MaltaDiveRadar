@@ -76,7 +76,7 @@ const elements = {
     zoomOutButton: document.getElementById("zoomOutButton"),
     resetViewButton: document.getElementById("resetViewButton"),
     lastRefresh: document.getElementById("lastRefresh"),
-    siteName: document.getElementById("siteName"),
+    siteNameLink: document.getElementById("siteNameLink"),
     siteMeta: document.getElementById("siteMeta"),
     generalWeather: document.getElementById("generalWeather"),
     conditionBadge: document.getElementById("conditionBadge"),
@@ -283,7 +283,9 @@ function renderSitePanel() {
 
     const snapshot = state.weatherBySite.get(site.id);
 
-    elements.siteName.textContent = site.name;
+    elements.siteNameLink.textContent = site.name;
+    elements.siteNameLink.href = buildSiteDetailsUrl(site.id);
+    elements.siteNameLink.removeAttribute("aria-disabled");
     elements.siteMeta.textContent = `${site.island}  | ${site.latitude.toFixed(4)}, ${site.longitude.toFixed(4)}`;
     elements.generalWeather.textContent = formatGeneralWeather(snapshot);
 
@@ -347,7 +349,9 @@ function selectSite(siteId) {
 }
 
 function resetPanel(siteName, siteMeta) {
-    elements.siteName.textContent = siteName;
+    elements.siteNameLink.textContent = siteName;
+    elements.siteNameLink.href = "#";
+    elements.siteNameLink.setAttribute("aria-disabled", "true");
     elements.siteMeta.textContent = siteMeta;
     elements.generalWeather.textContent = "--";
     elements.conditionBadge.className = "condition-badge condition-unknown";
@@ -366,6 +370,10 @@ function resetPanel(siteName, siteMeta) {
     elements.providerSource.textContent = "--";
 
     renderProviderList([]);
+}
+
+function buildSiteDetailsUrl(siteId) {
+    return `/sites/${siteId}`;
 }
 
 function createLine(x1, y1, x2, y2) {

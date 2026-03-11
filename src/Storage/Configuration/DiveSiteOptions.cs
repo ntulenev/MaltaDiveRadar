@@ -20,6 +20,12 @@ public sealed class DiveSiteOptions
     public string Name { get; init; } = string.Empty;
 
     /// <summary>
+    /// Gets short site description.
+    /// </summary>
+    [Required]
+    public string Description { get; init; } = string.Empty;
+
+    /// <summary>
     /// Gets island name.
     /// </summary>
     [Required]

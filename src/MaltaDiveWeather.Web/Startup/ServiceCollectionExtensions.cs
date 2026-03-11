@@ -89,7 +89,7 @@ internal static class ServiceCollectionExtensions
                 "Dive site IDs must be unique.")
             .Validate(
                 static options => AreDiveSiteTextValuesValid(options),
-                "Dive site names and islands must be non-empty.")
+                "Dive site names, descriptions, and islands must be non-empty.")
             .Validate(
                 static options => AreDiveSiteNamesUnique(options),
                 "Dive site names must be unique.")
@@ -214,6 +214,7 @@ internal static class ServiceCollectionExtensions
     {
         return options.Sites.All(static site =>
             !string.IsNullOrWhiteSpace(site.Name) &&
+            !string.IsNullOrWhiteSpace(site.Description) &&
             !string.IsNullOrWhiteSpace(site.Island));
     }
 }

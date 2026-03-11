@@ -166,6 +166,24 @@ body {
     letter-spacing: 0.06rem;
 }
 
+.site-name-link {
+    color: var(--text-primary);
+    text-decoration: none;
+    border-bottom: 1px dashed rgba(102, 190, 196, 0.55);
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.site-name-link:hover,
+.site-name-link:focus-visible {
+    color: var(--accent-cyan);
+    border-bottom-color: rgba(102, 190, 196, 0.9);
+}
+
+.site-name-link[aria-disabled="true"] {
+    border-bottom-color: transparent;
+    pointer-events: none;
+}
+
 .panel-heading p {
     margin: 0.25rem 0 0;
     color: var(--text-muted);
@@ -451,6 +469,69 @@ body {
     color: var(--rough);
 }
 
+.details-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.details-back-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.85rem;
+    border: 1px solid rgba(95, 161, 166, 0.45);
+    color: var(--accent-cyan);
+    text-decoration: none;
+    background: rgba(4, 11, 10, 0.75);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+}
+
+.details-back-link:hover,
+.details-back-link:focus-visible {
+    border-color: rgba(102, 190, 196, 0.72);
+    color: #9ce4e8;
+    background: rgba(7, 17, 15, 0.9);
+}
+
+.details-header-actions {
+    margin-top: 0.55rem;
+}
+
+.details-site-card {
+    border: 1px solid var(--line-subtle);
+    background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-soft));
+    box-shadow: inset 0 0 0 1px rgba(90, 120, 111, 0.14);
+    padding: 0.95rem;
+}
+
+.details-site-card h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06rem;
+}
+
+.details-site-meta {
+    margin: 0.35rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.details-site-description {
+    margin: 0.85rem 0 0;
+    padding: 0.65rem;
+    border-left: 2px solid var(--line-strong);
+    background: rgba(18, 30, 26, 0.5);
+    color: var(--text-primary);
+    font-size: 0.84rem;
+    line-height: 1.55;
+}
+
 @media (max-width: 980px) {
     .hud-layout {
         padding: 0.75rem;
@@ -459,6 +540,12 @@ body {
 
     .hud-layout {
         grid-template-columns: 1fr;
+    }
+
+    .details-layout {
+        grid-template-columns: 1fr;
+        padding: 0.75rem;
+        gap: 0.75rem;
     }
 
     .hud-header {

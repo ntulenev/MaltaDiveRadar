@@ -16,6 +16,11 @@ public sealed record DiveSiteDto
     public required string Name { get; init; }
 
     /// <summary>
+    /// Gets short place description.
+    /// </summary>
+    public required string Description { get; init; }
+
+    /// <summary>
     /// Gets island name.
     /// </summary>
     public required string Island { get; init; }

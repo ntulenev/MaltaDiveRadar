@@ -10,6 +10,7 @@ public sealed class DiveSite
     /// </summary>
     /// <param name="id">Internal numeric site ID.</param>
     /// <param name="name">Validated display name.</param>
+    /// <param name="description">Short place description for the site.</param>
     /// <param name="island">Validated island name.</param>
     /// <param name="latitude">Site latitude in decimal degrees.</param>
     /// <param name="longitude">Site longitude in decimal degrees.</param>
@@ -19,6 +20,7 @@ public sealed class DiveSite
     public DiveSite(
         DiveSiteId id,
         DiveSiteName name,
+        string description,
         IslandName island,
         Latitude latitude,
         Longitude longitude,
@@ -31,6 +33,7 @@ public sealed class DiveSite
         ArgumentNullException.ThrowIfNull(island);
         ArgumentNullException.ThrowIfNull(latitude);
         ArgumentNullException.ThrowIfNull(longitude);
+        ArgumentException.ThrowIfNullOrWhiteSpace(description);
 
         if (displayX < 0)
         {
@@ -48,6 +51,7 @@ public sealed class DiveSite
 
         Id = id;
         Name = name;
+        Description = description.Trim();
         Island = island;
         Latitude = latitude;
         Longitude = longitude;
@@ -65,6 +69,11 @@ public sealed class DiveSite
     /// Gets the display name.
     /// </summary>
     public DiveSiteName Name { get; }
+
+    /// <summary>
+    /// Gets the short place description.
+    /// </summary>
+    public string Description { get; }
 
     /// <summary>
     /// Gets the island name.
@@ -106,6 +115,7 @@ public sealed class DiveSite
         return new DiveSite(
             Id,
             Name,
+            Description,
             Island,
             Latitude,
             Longitude,

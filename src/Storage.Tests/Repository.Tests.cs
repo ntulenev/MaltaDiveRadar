@@ -45,6 +45,7 @@ public sealed class RepositoryTests
                     {
                         Id = 4,
                         Name = "Blue Hole",
+                        Description = "Natural sinkhole with steep walls.",
                         Island = "Gozo",
                         Latitude = 36.04D,
                         Longitude = 14.20D,
@@ -78,6 +79,7 @@ public sealed class RepositoryTests
                     {
                         Id = 1,
                         Name = "Site-A",
+                        Description = "Calm bay with rocky entry.",
                         Island = "Malta",
                         Latitude = 35.9D,
                         Longitude = 14.3D,
@@ -89,6 +91,7 @@ public sealed class RepositoryTests
                     {
                         Id = 2,
                         Name = "Site-B",
+                        Description = "Exposed reef with stronger currents.",
                         Island = "Gozo",
                         Latitude = 36.0D,
                         Longitude = 14.2D,
